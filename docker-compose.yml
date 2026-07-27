@@ -1,0 +1,31 @@
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: coldy-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: coldy
+      POSTGRES_PASSWORD: coldy_dev_password
+      POSTGRES_DB: coldy
+    ports:
+      - "5432:5432"
+    volumes:
+      - coldy_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coldy -d coldy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: coldy-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - coldy_redisdata:/data
+
+volumes:
+  coldy_pgdata:
+  coldy_redisdata:
