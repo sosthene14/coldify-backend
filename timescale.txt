@@ -1,0 +1,62 @@
+npx drizzle-kit generate           # génère la migration standard (table + colonnes)
+npx drizzle-kit generate --custom  
+npx drizzle-kit migrate
+
+SELECT create_hypertable('email_event', by_range('occurred_at', INTERVAL '7 days'));
+
+ALTER TABLE email_event
+  ALTER COLUMN occurred_at TYPE timestamptz USING occurred_at AT TIME ZONE 'UTC';
+
+ALTER TABLE email_event SET (
+  timescaledb.compress,
+  timescaledb.compress_segmentby = 'organization_id, campaign_id',
+  timescaledb.compress_orderby = 'occurred_at DESC'
+);
+
+SELECT add_compression_policy('email_event', INTERVAL '30 days');
+
+SELECT add_retention_policy('email_event', INTERVAL '2 years');
+
+
+-- Continuous aggregate: rollup quotidien par campagne (Overview + Campaigns)
+CREATE MATERIALIZED VIEW campaign_daily_stat_cagg
+WITH (timescaledb.continuous) AS
+SELECT
+  campaign_id,
+  organization_id,
+  time_bucket('1 day', occurred_at) AS day,
+  count(*) FILTER (WHERE type = 'sent')            AS sent_count,
+  count(*) FILTER (WHERE type = 'opened')           AS opened_count,
+  count(*) FILTER (WHERE type = 'clicked')           AS clicked_count,
+  count(*) FILTER (WHERE type = 'replied')           AS replied_count,
+  count(*) FILTER (WHERE type = 'bounced')           AS bounced_count,
+  count(*) FILTER (WHERE type = 'unsubscribed')      AS unsubscribed_count,
+  count(*) FILTER (WHERE type = 'meeting_booked')    AS meetings_booked_count
+FROM email_event
+GROUP BY campaign_id, organization_id, day;
+
+SELECT add_continuous_aggregate_policy('campaign_daily_stat_cagg',
+  start_offset => INTERVAL '3 days',
+  end_offset => INTERVAL '1 hour',
+  schedule_interval => INTERVAL '1 hour');
+
+-- Continuous aggregate: rollup quotidien par membre (tab Team)
+CREATE MATERIALIZED VIEW member_daily_stat_cagg
+WITH (timescaledb.continuous) AS
+SELECT
+  member_id,
+  organization_id,
+  time_bucket('1 day', occurred_at) AS day,
+  count(*) FILTER (WHERE type = 'sent')            AS sent_count,
+  count(*) FILTER (WHERE type = 'opened')           AS opened_count,
+  count(*) FILTER (WHERE type = 'clicked')           AS clicked_count,
+  count(*) FILTER (WHERE type = 'replied')           AS replied_count,
+  count(*) FILTER (WHERE type = 'meeting_booked')    AS meetings_booked_count
+FROM email_event
+WHERE member_id IS NOT NULL
+GROUP BY member_id, organization_id, day;
+
+SELECT add_continuous_aggregate_policy('member_daily_stat_cagg',
+  start_offset => INTERVAL '3 days',
+  end_offset => INTERVAL '1 hour',
+  schedule_interval => INTERVAL '1 hour');
