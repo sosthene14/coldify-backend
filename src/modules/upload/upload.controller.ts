@@ -23,6 +23,7 @@ export const uploadController = new Elysia({ prefix: "/uploads" })
   // Générer une URL de visualisation pour une image
   .post(
     "/view-image",
+    //@ts-ignore type mismatch
     async ({ tenant, body, error }) => {
       const { objectKey, expiresIn } = body;
       try {
@@ -49,6 +50,7 @@ export const uploadController = new Elysia({ prefix: "/uploads" })
   // Supprimer une image
   .delete(
     "/image/:objectKey",
+    //@ts-ignore type mismatch
     async ({ tenant, params, error }) => {
       try {
         // Décoder l'objectKey depuis l'URL

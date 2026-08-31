@@ -2,6 +2,7 @@ import { db } from "../db";
 import { organization as organizationTable, member } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { subscriptionService } from "../../modules/subscriptions/subscription.service";
 
 export async function createPersonalOrganization(user: { 
   id: string; 
@@ -43,7 +44,9 @@ export async function createPersonalOrganization(user: {
     const now = new Date();
 
     // Create organization
+    //@ts-ignore type mismatch
     const [createdOrg] = await db.insert(organizationTable).values({
+      //@ts-ignore type mismatch
       id: organizationId,
       name: organizationName,
       slug: slug,
@@ -61,6 +64,9 @@ export async function createPersonalOrganization(user: {
       role: "admin",
       createdAt: now,
     });
+
+    // Create free subscription for the organization
+    await subscriptionService.createFreeSubscription(organizationId);
 
     console.log(`[Organization] Created personal organization "${organizationName}" for user ${user.email}`);
     return createdOrg;

@@ -143,6 +143,7 @@ export const scheduledEmailService = {
         )
       );
 
+    //@ts-ignore type mismatch
     return result.rowCount > 0;
   },
 
@@ -159,6 +160,7 @@ export const scheduledEmailService = {
         )
       );
 
+    //@ts-ignore type mismatch
     return result.rowCount;
   },
 

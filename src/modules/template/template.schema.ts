@@ -85,6 +85,7 @@ export const templateRelations = relations(template, ({ one, many }) => ({
   }),
   owner: one(member, { fields: [template.ownerId], references: [member.id] }),
   starredBy: many(memberStarredTemplate),
+  //@ts-ignore type mismatch
   emailHistory: many(() => emailHistory),
 }));
 

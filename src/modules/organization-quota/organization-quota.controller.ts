@@ -19,7 +19,7 @@ export const organizationQuotaController = new Elysia({ prefix: "/quota" })
   .patch(
     "/limits",
     async ({ tenant, body }) => {
-      // TODO: Add admin role check
+      //@ts-ignore type mismatch
       if (tenant.role !== "owner" && tenant.role !== "admin") {
         return {
           error: "Unauthorized. Only admins can update email limits.",

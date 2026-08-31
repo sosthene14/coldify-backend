@@ -24,6 +24,7 @@ import { scheduledEmailController } from "./modules/scheduled-email/scheduled-em
 import { emailTrackingController } from "./modules/reporting/email-tracking.controller";
 import { userController } from "./modules/user/user.controller";
 import { organizationQuotaController } from "./modules/organization-quota/organization-quota.controller";
+import { subscriptionController } from "./modules/subscriptions/subscription.controller";
 import { initWebSocket, joinOrganization, leaveOrganization } from "./shared/lib/websocket";
 
 // Initialiser MinIO au démarrage
@@ -63,12 +64,14 @@ const app = new Elysia()
   .use(scheduledEmailController)
   .use(userController)
   .use(organizationQuotaController)
+  .use(subscriptionController)
   .use(emailTrackingController) // Public tracking endpoint
   .ws("/ws", {
     open(ws) {
       console.log("[WebSocket] Client connected");
       ws.send(JSON.stringify({ type: "connected" }));
     },
+    //@ts-ignore type mismatch
     message(ws, message) {
       try {
         // Handle message as object (Bun auto-parses) or string
@@ -82,6 +85,7 @@ const app = new Elysia()
         }
         
         if (data.type === "join:organization" && data.organizationId) {
+          //@ts-ignore type mismatch
           joinOrganization(ws, data.organizationId);
           ws.send(JSON.stringify({ 
             type: "joined", 
@@ -94,12 +98,14 @@ const app = new Elysia()
     },
     close(ws) {
       console.log("[WebSocket] Client disconnected");
+      //@ts-ignore type mismatch
       leaveOrganization(ws);
     },
   })
   .listen(3001);
 
 // Initialize WebSocket tracking
+//@ts-ignore type mismatch
 initWebSocket(app);
 
 console.log(

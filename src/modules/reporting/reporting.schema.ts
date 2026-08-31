@@ -10,8 +10,8 @@ import {
 import { relations } from "drizzle-orm";
 import { lead } from "../lead/lead.schema";
 import { member, organization } from "../../shared/db/schema/auth";
-import { campaign } from "../campaign";
-import { template } from "../template";
+import { campaign } from "../campaign/campaign.schema";
+import { template } from "../template/template.schema";
 
 export const emailEventType = pgEnum("email_event_type", [
   "sent",
@@ -45,7 +45,7 @@ export const emailEvent = pgTable(
     type: emailEventType("type").notNull(),
     metadata: jsonb("metadata"),
 
-    occurredAt: timestamp("occurred_at").defaultNow().notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     // PK composite: Timescale exige occurredAt dans toute contrainte unique/PK

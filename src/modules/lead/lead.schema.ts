@@ -10,8 +10,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { member, organization } from "../../shared/db/schema/auth";
-import { campaign } from "../campaign";
-import { organizationCustomField } from "../organization-custom-field";
+import { campaign } from "../campaign/campaign.schema";
+import { organizationCustomField } from "../organization-custom-field/organization-custom-field.schema";
 
 
 export const leadStatus = pgEnum("lead_status", [

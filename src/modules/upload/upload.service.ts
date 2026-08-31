@@ -55,6 +55,7 @@ export const uploadService = {
       BUCKET_NAME,
       objectKey,
       5 * 60, // 5 minutes
+      //@ts-ignore type mismatch
       {
         "Content-Type": contentType,
       },

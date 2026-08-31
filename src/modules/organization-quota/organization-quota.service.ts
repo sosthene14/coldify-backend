@@ -3,10 +3,12 @@ import { db } from "../../shared/db";
 import { organizationEmailQuota } from "../../shared/db/schema/organization-quota";
 import { nanoid } from "nanoid";
 import type { OrganizationEmailQuota } from "../../shared/db/schema/organization-quota";
+import { subscriptionService } from "../subscriptions/subscription.service";
 
 export const organizationQuotaService = {
   /**
    * Get quota for an organization (create if doesn't exist)
+   * Now uses subscription limits as defaults
    */
   async getOrCreate(organizationId: string): Promise<OrganizationEmailQuota> {
     const [existing] = await db
@@ -19,14 +21,17 @@ export const organizationQuotaService = {
       return existing;
     }
 
-    // Create default quota
+    // Get limits from subscription plan
+    const limits = await subscriptionService.getEmailLimits(organizationId);
+
+    // Create default quota based on subscription
     const [created] = await db
       .insert(organizationEmailQuota)
       .values({
         id: `quota_${nanoid()}`,
         organizationId,
-        dailyLimit: 500, // Default daily limit
-        monthlyLimit: null, // Unlimited monthly by default
+        dailyLimit: limits.dailyLimit,
+        monthlyLimit: limits.monthlyLimit,
       })
       .returning();
 

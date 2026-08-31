@@ -8,6 +8,7 @@ import { attachmentUploadService } from "./attachment-upload.service";
 import { getGmailService } from "./gmail.service";
 import { tenantPlugin } from "../../shared/plugins/tenant";
 import { nanoid } from "nanoid";
+import { subscriptionService } from "../subscriptions/subscription.service";
 
 export const mailboxController = new Elysia({ prefix: "/mailboxes" })
   .use(tenantPlugin)
@@ -49,6 +50,18 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
    * Initiate Gmail OAuth flow
    */
   .get("/gmail/connect", async ({ tenant }) => {
+    // Check provider limit before connecting
+    const canAddProvider = await subscriptionService.canAddProvider(
+      tenant.organizationId
+    );
+
+    if (!canAddProvider.allowed) {
+      return {
+        error: canAddProvider.reason || "Cannot add more providers",
+        status: 403,
+      };
+    }
+
     const gmailService = getGmailService();
 
     // Get member ID from database
@@ -164,6 +177,18 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
     "/smtp/connect",
     async ({ body, tenant }) => {
       try {
+        // Check provider limit before connecting
+        const canAddProvider = await subscriptionService.canAddProvider(
+          tenant.organizationId
+        );
+
+        if (!canAddProvider.allowed) {
+          return {
+            error: canAddProvider.reason || "Cannot add more providers",
+            status: 403,
+          };
+        }
+
         // Get member ID from database
         const [membership] = await db
           .select()
@@ -417,8 +442,11 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
 
     if (mailbox.provider === "gmail") {
       const gmailService = getGmailService();
+     
       const result = await gmailService.verifyConnection(
+         //@ts-ignore type mismatch
         mailbox.accessToken || "",
+         //@ts-ignore type mismatch
         mailbox.refreshToken || null
       );
 
@@ -508,7 +536,7 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
    */
   .post(
     "/send",
-    async ({ body, tenant }) => {
+    async ({ body, tenant,set }) => {
       const result = await emailSendService.sendEmail({
         mailboxId: body.mailboxId,
         organizationId: tenant.organizationId,
@@ -526,11 +554,11 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
       });
 
       if (!result.success) {
-        return {
-          error: result.error,
-          status: 400,
-        };
-      }
+      set.status = 400;   // <- ça, c'est le vrai status HTTP
+      return {
+        error: result.error,
+      };
+    }
 
       // Delete attachments after successful send
       if (body.attachments) {
@@ -581,6 +609,11 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
   .post(
     "/schedule",
     async ({ body, tenant }) => {
+      // Log timezone information for debugging
+      if (body.timezone) {
+        console.log(`[Schedule Email] User timezone: ${body.timezone}, Scheduled for: ${body.scheduledAt}`);
+      }
+
       const result = await emailSendService.scheduleEmail({
         mailboxId: body.mailboxId,
         organizationId: tenant.organizationId,
@@ -596,6 +629,7 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
         templateId: body.templateId,
         attachments: body.attachments,
         scheduledAt: new Date(body.scheduledAt),
+        timezone: body.timezone, // Pass timezone to service
       });
 
       if (!result.success) {
@@ -622,6 +656,7 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
         replyTo: t.Optional(t.String({ format: "email" })),
         templateId: t.Optional(t.String()),
         scheduledAt: t.String(), // ISO date string
+        timezone: t.Optional(t.String()), // User's timezone (e.g., 'America/New_York')
         attachments: t.Optional(
           t.Array(
             t.Object({

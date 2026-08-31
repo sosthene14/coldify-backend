@@ -89,4 +89,29 @@ export const emailHistoryController = new Elysia({ prefix: "/email-history" })
       success: true,
       message: "Email deleted successfully",
     };
+  })
+
+  .get("/:id/content", async ({ params, tenant, set }) => {
+    const email = await emailHistoryService.getById(
+      params.id,
+      tenant.organizationId
+    );
+
+    if (!email) {
+      set.status = 404;
+      return { error: "Email not found" };
+    }
+
+    try {
+      const htmlContent = await emailHistoryService.fetchContentOnDemand(
+        email,
+        tenant.organizationId
+      );
+
+      return { htmlContent };
+    } catch (err) {
+      set.status = 502;
+      return { error: "Failed to fetch email content" };
+    }
   });
+

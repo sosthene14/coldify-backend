@@ -16,7 +16,7 @@ export const scheduledEmails = pgTable("scheduled_emails", {
   
   // Content
   subject: text("subject").notNull(),
-  htmlContent: text("html_content").notNull(),
+  snippet: text("snippet").notNull(),
   textContent: text("text_content"),
   replyTo: text("reply_to"),
   
@@ -35,6 +35,7 @@ export const scheduledEmails = pgTable("scheduled_emails", {
   
   // Scheduling
   scheduledAt: timestamp("scheduled_at").notNull(),
+  timezone: text("timezone"), // User's timezone when scheduling (e.g., 'America/New_York')
   
   // Status tracking
   status: text("status").notNull().default("pending"), // pending, processing, sent, failed, cancelled

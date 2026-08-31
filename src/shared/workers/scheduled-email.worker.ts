@@ -28,6 +28,23 @@ const worker = new Worker<ScheduledEmailJobData>(
           sentAt: new Date(),
         });
 
+        // Clean up attachments after successful send
+        if (emailData.attachments && Array.isArray(emailData.attachments)) {
+          const { attachmentUploadService } = await import("../../modules/mailbox/attachment-upload.service.js");
+          
+          for (const attachment of emailData.attachments) {
+            if (attachment.objectKey) {
+              try {
+                await attachmentUploadService.deleteAttachment(attachment.objectKey);
+                console.log(`[Scheduled Email Worker] Deleted attachment after send: ${attachment.objectKey}`);
+              } catch (error) {
+                console.error(`[Scheduled Email Worker] Failed to delete attachment ${attachment.objectKey}:`, error);
+                // Don't fail the whole job if attachment deletion fails
+              }
+            }
+          }
+        }
+
         console.log(
           `[Scheduled Email Worker] Successfully sent scheduled email: ${scheduledEmailId}. Sent to ${result.totalSent || 1} recipients.`
         );
@@ -61,6 +78,22 @@ const worker = new Worker<ScheduledEmailJobData>(
           errorMessage: error.message,
           retryCount,
         });
+
+        // Clean up attachments after permanent failure
+        if (emailData.attachments && Array.isArray(emailData.attachments)) {
+          const { attachmentUploadService } = await import("../../modules/mailbox/attachment-upload.service.js");
+          
+          for (const attachment of emailData.attachments) {
+            if (attachment.objectKey) {
+              try {
+                await attachmentUploadService.deleteAttachment(attachment.objectKey);
+                console.log(`[Scheduled Email Worker] Deleted attachment after permanent failure: ${attachment.objectKey}`);
+              } catch (delError) {
+                console.error(`[Scheduled Email Worker] Failed to delete attachment ${attachment.objectKey}:`, delError);
+              }
+            }
+          }
+        }
       } else {
         // Update retry count
         await scheduledEmailService.updateStatus(scheduledEmailId, "pending", {

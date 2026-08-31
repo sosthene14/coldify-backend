@@ -1,4 +1,4 @@
-// src/lib/auth.ts
+// src/shared/lib/auth.ts
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization, twoFactor } from "better-auth/plugins";

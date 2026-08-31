@@ -12,7 +12,7 @@ import { relations } from "drizzle-orm";
 
 import { lead } from "../lead/lead.schema";
 import { member, organization } from "../../shared/db/schema/auth";
-import { campaign } from "../campaign";
+import { campaign } from "../campaign/campaign.schema";
 
 export const sentiment = pgEnum("sentiment", [
   "interested",

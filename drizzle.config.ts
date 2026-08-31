@@ -7,5 +7,10 @@ export default defineConfig({
   dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL!,
-  },
+
+
+  },  tablesFilter: [
+    "!campaign_daily_stat_cagg",
+    "!member_daily_stat_cagg",
+  ]
 });

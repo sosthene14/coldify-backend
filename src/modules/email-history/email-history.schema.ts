@@ -34,7 +34,7 @@ export const emailHistory = pgTable(
     cc: json("cc").$type<string[]>(),
     bcc: json("bcc").$type<string[]>(),
     subject: text("subject").notNull(),
-    htmlContent: text("html_content").notNull(),
+    snippet: text("snippet").notNull(),
     
     // Attachments info (just metadata, not actual files)
     hasAttachments: boolean("has_attachments").default(false).notNull(),

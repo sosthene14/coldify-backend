@@ -1,3 +1,4 @@
+import { db } from "../../shared";
 import { minioClient, BUCKET_NAME } from "../../shared/lib/minio";
 import { nanoid } from "nanoid";
 
@@ -61,6 +62,7 @@ export const attachmentUploadService = {
   /**
    * Clean up expired attachments
    * Should be run periodically (e.g., every hour)
+   * IMPORTANT: Does not delete attachments linked to pending scheduled emails
    */
   async cleanupExpiredAttachments(): Promise<{
     deleted: number;
@@ -72,10 +74,42 @@ export const attachmentUploadService = {
     let errors = 0;
 
     try {
+      const { scheduledEmails } = await import("../scheduled-email/scheduled-email.schema.js");
+
+      const pendingScheduledEmails = await db
+        .select()
+        .from(scheduledEmails);
+
+      // Filter in memory to avoid mixing Drizzle types loaded by the schema
+      // module and the shared database client.
+      const pendingEmails = pendingScheduledEmails.filter(
+        (email) => email.status === "pending"
+      );
+
+      // Build a Set of objectKeys that should NOT be deleted
+      const protectedObjectKeys = new Set<string>();
+      for (const email of pendingEmails) {
+        if (email.attachments && Array.isArray(email.attachments)) {
+          for (const attachment of email.attachments) {
+            if (attachment.objectKey) {
+              protectedObjectKeys.add(attachment.objectKey);
+            }
+          }
+        }
+      }
+
+      console.log(`[Attachment Cleanup] Protecting ${protectedObjectKeys.size} attachments from ${pendingEmails.length} pending scheduled emails`);
+
       const stream = minioClient.listObjects(bucket, ATTACHMENTS_PREFIX, true);
 
       for await (const obj of stream) {
         if (!obj.name) continue;
+
+        // Skip if this attachment is protected (used by a pending scheduled email)
+        if (protectedObjectKeys.has(obj.name)) {
+          console.log(`[Attachment Cleanup] Skipping protected attachment: ${obj.name}`);
+          continue;
+        }
 
         try {
           // Get object metadata
@@ -83,7 +117,7 @@ export const attachmentUploadService = {
           const expiresAt = stat.metaData?.["expires-at"];
 
           if (expiresAt && new Date(expiresAt) <= new Date()) {
-            // Attachment has expired, delete it
+            // Attachment has expired and is not protected, delete it
             await minioClient.removeObject(bucket, obj.name);
             deleted++;
             console.log(`Deleted expired attachment: ${obj.name}`);

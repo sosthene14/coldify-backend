@@ -2,7 +2,7 @@ import { pgTable, text, date, time, timestamp, pgEnum, index } from "drizzle-orm
 import { relations } from "drizzle-orm";
 import { lead } from "../lead/lead.schema";
 import { member, organization } from "../../shared/db/schema/auth";
-import { campaign } from "../campaign";
+import { campaign } from "../campaign/campaign.schema";
 
 export const calendarEventType = pgEnum("calendar_event_type", [
   "meeting",

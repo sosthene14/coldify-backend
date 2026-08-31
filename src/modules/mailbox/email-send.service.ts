@@ -21,6 +21,7 @@ interface SendEmailParams {
   replyTo?: string;
   attachments?: EmailAttachment[];
   scheduledAt?: Date;
+  timezone?: string; // User's timezone when scheduling
   templateId?: string; // Track which template was used
 }
 
@@ -30,6 +31,15 @@ interface EmailAttachment {
   objectKey?: string; // MinIO object key
   content?: Buffer; // Raw content
   size: number;
+}
+
+function extractSnippet(html: string, maxLength = 150): string {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, maxLength);
 }
 
 // Gmail limits
@@ -194,12 +204,14 @@ export const emailSendService = {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
 
+      //@ts-ignore mismatch 
       minioClient.getObject(bucket, objectKey, (err, stream) => {
         if (err) {
           reject(err);
           return;
         }
 
+        //@ts-ignore mismatch 
         stream.on("data", (chunk) => chunks.push(chunk));
         stream.on("end", () => resolve(Buffer.concat(chunks)));
         stream.on("error", reject);
@@ -336,7 +348,7 @@ export const emailSendService = {
             cc: params.cc,
             bcc: params.bcc,
             subject: params.subject,
-            htmlContent: params.html,
+            snippet: extractSnippet(params.html),
             hasAttachments: !!params.attachments && params.attachments.length > 0,
             attachmentCount: params.attachments?.length || 0,
             attachmentNames: params.attachments?.map((a) => a.filename),
@@ -446,7 +458,7 @@ export const emailSendService = {
             cc: params.cc,
             bcc: params.bcc,
             subject: params.subject,
-            htmlContent: params.html,
+            snippet: extractSnippet(params.html),
             hasAttachments: !!params.attachments && params.attachments.length > 0,
             attachmentCount: params.attachments?.length || 0,
             attachmentNames: params.attachments?.map((a) => a.filename),
@@ -536,6 +548,21 @@ export const emailSendService = {
         }
       }
 
+      const scheduledAttachments = params.attachments?.map((attachment) => {
+        if (!attachment.objectKey) {
+          throw new Error(
+            `Attachment "${attachment.filename}" must have an object key to be scheduled`
+          );
+        }
+
+        return {
+          filename: attachment.filename,
+          mimeType: attachment.mimeType,
+          objectKey: attachment.objectKey,
+          size: attachment.size,
+        };
+      });
+
       // Import the service and queue here to avoid circular dependency
       const { scheduledEmailService } = await import(
         "../scheduled-email/scheduled-email.service.js"
@@ -553,13 +580,14 @@ export const emailSendService = {
         cc: params.cc,
         bcc: params.bcc,
         subject: params.subject,
-        htmlContent: params.html,
+        snippet: extractSnippet(params.html),
         textContent: params.text,
         replyTo: params.replyTo,
         templateId: params.templateId, // Add templateId to scheduled email
+        timezone: params.timezone, // Store user's timezone
         hasAttachments: !!params.attachments && params.attachments.length > 0,
         attachmentCount: params.attachments?.length || 0,
-        attachments: params.attachments,
+        attachments: scheduledAttachments,
         scheduledAt: params.scheduledAt,
         status: "pending",
       });
@@ -578,7 +606,7 @@ export const emailSendService = {
           text: params.text,
           replyTo: params.replyTo,
           templateId: params.templateId, // Add templateId to job data
-          attachments: params.attachments,
+          attachments: scheduledAttachments,
         },
         params.scheduledAt
       );

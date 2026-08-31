@@ -16,3 +16,4 @@ export * from "../../../modules/template/template.schema";
 export * from "../../../modules/mailbox/mailbox.schema";
 export * from "../../../modules/email-history/email-history.schema";
 export * from "../../../modules/scheduled-email/scheduled-email.schema";
+export * from "../../../modules/subscriptions/subscription.schema";
