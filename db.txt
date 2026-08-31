@@ -1,1 +1,1 @@
-docker exec -it coldy-db psql -U coldy -d coldy
+docker exec -it somails-db psql -U somails -d somails

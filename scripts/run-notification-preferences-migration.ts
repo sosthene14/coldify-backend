@@ -3,7 +3,7 @@ import postgres from "postgres";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://coldy:coldy_dev_password@localhost:5432/coldy";
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://somails:somails_dev_password@localhost:5432/somails";
 
 async function runMigration() {
   const client = postgres(DATABASE_URL);

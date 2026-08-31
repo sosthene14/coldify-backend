@@ -1,43 +1,43 @@
 services:
   db:
     image: timescale/timescaledb:latest-pg16
-    container_name: coldy-db
+    container_name: somails-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: coldy
-      POSTGRES_PASSWORD: coldy_dev_password
-      POSTGRES_DB: coldy
+      POSTGRES_USER: somails
+      POSTGRES_PASSWORD: somails_dev_password
+      POSTGRES_DB: somails
     ports:
       - "5432:5432"
     volumes:
-      - coldy_pgdata:/var/lib/postgresql/data
+      - somails_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U coldy -d coldy"]
+      test: ["CMD-SHELL", "pg_isready -U somails -d somails"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: coldy-redis
+    container_name: somails-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
-      - coldy_redisdata:/data
+      - somails_redisdata:/data
 
   minio:
     image: minio/minio:latest
-    container_name: coldy-minio
+    container_name: somails-minio
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: coldy_minio_admin
-      MINIO_ROOT_PASSWORD: coldy_minio_secret_password_2024
+      MINIO_ROOT_USER: somails_minio_admin
+      MINIO_ROOT_PASSWORD: somails_minio_secret_password_2024
     ports:
       - "9000:9000"  # API
       - "9001:9001"  # Console Web
     volumes:
-      - coldy_miniodata:/data
+      - somails_miniodata:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -46,6 +46,6 @@ services:
       retries: 3
 
 volumes:
-  coldy_pgdata:
-  coldy_redisdata:
-  coldy_miniodata:
+  somails_pgdata:
+  somails_redisdata:
+  somails_miniodata:
