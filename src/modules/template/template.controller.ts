@@ -79,10 +79,16 @@ export const templateController = new Elysia({ prefix: "/templates" })
 
       .patch(
         "/:id",
-        async ({ tenant, params, body, error }) => {
+        async ({ tenant, params, body, set }) => {
           const row = await templateService.update(tenant, params.id, body)
-          if (row === null) return error(404, "Template introuvable")
-          if (row === "forbidden") return error(403, "Seul le créateur ou un admin peut modifier ce template")
+          if (row === null) {
+            set.status = 404
+            return { error: "Template introuvable" }
+          }
+          if (row === "forbidden") {
+            set.status = 403
+            return { error: "Seul le créateur ou un admin peut modifier ce template" }
+          }
           return row
         },
         {
@@ -101,10 +107,16 @@ export const templateController = new Elysia({ prefix: "/templates" })
 
       .delete(
         "/:id",
-        async ({ tenant, params, error }) => {
+        async ({ tenant, params, set }) => {
           const row = await templateService.remove(tenant, params.id)
-          if (row === null) return error(404, "Template introuvable")
-          if (row === "forbidden") return error(403, "Seul le créateur ou un admin peut supprimer ce template")
+          if (row === null) {
+            set.status = 404
+            return { error: "Template introuvable" }
+          }
+          if (row === "forbidden") {
+            set.status = 403
+            return { error: "Seul le créateur ou un admin peut supprimer ce template" }
+          }
           return { success: true }
         },
         { params: t.Object({ id: t.String() }) },
@@ -112,18 +124,22 @@ export const templateController = new Elysia({ prefix: "/templates" })
 
       .post(
         "/:id/duplicate",
-        async ({ tenant, params, error }) => {
+        async ({ tenant, params, set }) => {
           const row = await templateService.duplicate(tenant, params.id)
-          if (!row) return error(404, "Template introuvable")
+          if (!row) {
+            set.status = 404
+            return { error: "Template introuvable" }
+          }
           return row
         },
         { params: t.Object({ id: t.String() }) },
       )
 
       // Admin only: recalculate statistics for all templates
-      .post("/recalculate-stats", async ({ tenant, error }) => {
+      .post("/recalculate-stats", async ({ tenant, set }) => {
         if (tenant.role !== "admin" && !tenant.isSuperAdmin) {
-          return error(403, "Admin access required")
+          set.status = 403
+          return { error: "Admin access required" }
         }
 
         await templateService.recalculateAllStats(tenant.organizationId)

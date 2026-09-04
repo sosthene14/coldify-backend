@@ -40,19 +40,17 @@ export async function createPersonalOrganization(user: {
     const now = new Date()
 
     // Create organization
-    //@ts-expect-error type mismatch
-    const [createdOrg] = await db
-      .insert(organizationTable)
-      .values({
-        //@ts-expect-error type mismatch
-        id: organizationId,
-        name: organizationName,
-        slug: slug,
-        metadata: {},
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning()
+    //@ts-nocheck type mismatch
+   const [createdOrg] = await db
+  .insert(organizationTable)
+  .values({
+    id: organizationId,
+    name: organizationName,
+    slug: slug,
+    metadata: JSON.stringify({}),
+    createdAt: now,
+  })
+  .returning()
 
     // Create member record to link user to organization as admin
     const memberId = nanoid()

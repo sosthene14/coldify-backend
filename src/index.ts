@@ -18,15 +18,12 @@ type WebSocketMessage =
       [key: string]: unknown
     }
 
-import { campaignController } from "./modules/campaign"
-import { conversationController } from "./modules/conversation"
+ import { conversationController } from "./modules/conversation"
 import { emailHistoryController } from "./modules/email-history"
 // Import des contrôleurs des modules
-import { folderController } from "./modules/folder"
-import { leadController } from "./modules/lead"
+ 
 import { mailboxController } from "./modules/mailbox"
-import { organizationCustomFieldController } from "./modules/organization-custom-field"
-import { organizationQuotaController } from "./modules/organization-quota/organization-quota.controller"
+ import { organizationQuotaController } from "./modules/organization-quota/organization-quota.controller"
 import { reportingController } from "./modules/reporting"
 import { emailTrackingController } from "./modules/reporting/email-tracking.controller"
 import { scheduledEmailController } from "./modules/scheduled-email/scheduled-email.controller"
@@ -62,11 +59,7 @@ const app = new Elysia()
   .group("/api", (app) =>
     app
       .mount(auth.handler)
-      .use(folderController)
-      .use(campaignController)
-      .use(leadController)
       .use(templateController)
-      .use(organizationCustomFieldController)
       .use(conversationController)
       .use(reportingController)
       .use(uploadController)
