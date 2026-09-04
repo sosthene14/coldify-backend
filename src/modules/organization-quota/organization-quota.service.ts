@@ -20,6 +20,7 @@ interface QuotaStats {
   dailyUsed: number
   dailyLimit: number
   dailyRemaining: number
+  dailyResetAt: string
   monthlyUsed: number
   monthlyLimit: number | null
   monthlyRemaining: number | null
@@ -208,11 +209,13 @@ export const organizationQuotaService = {
 
     const dailyUsed = shouldResetDaily ? 0 : quota.dailySent
     const monthlyUsed = shouldResetMonthly ? 0 : quota.monthlySent
+    const dailyResetAt = new Date(lastReset.getTime() + 24 * 60 * 60 * 1000).toISOString()
 
     return {
       dailyUsed,
       dailyLimit: quota.dailyLimit,
       dailyRemaining: Math.max(0, quota.dailyLimit - dailyUsed),
+      dailyResetAt,
       monthlyUsed,
       monthlyLimit: quota.monthlyLimit,
       monthlyRemaining: quota.monthlyLimit !== null ? Math.max(0, quota.monthlyLimit - monthlyUsed) : null,

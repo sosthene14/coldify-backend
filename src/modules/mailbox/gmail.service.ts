@@ -275,7 +275,7 @@ export function getGmailService(): GmailService {
   if (!gmailServiceInstance) {
     const clientId = process.env.GOOGLE_CLIENT_ID
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-    const redirectUri = `${process.env.BETTER_AUTH_URL}/mailboxes/gmail/callback`
+    const redirectUri = `${process.env.BETTER_AUTH_URL}/api/mailboxes/gmail/callback`
 
     if (!clientId || !clientSecret) {
       throw new Error("Gmail OAuth credentials not configured")
