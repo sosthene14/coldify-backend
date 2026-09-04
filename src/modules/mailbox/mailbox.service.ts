@@ -1,19 +1,35 @@
-import { eq, and, desc } from "drizzle-orm";
-import { db } from "../../shared/db";
-import { mailbox } from "./mailbox.schema";
-import { nanoid } from "nanoid";
-import type { Mailbox, InsertMailbox } from "./mailbox.schema";
-import { encrypt } from "../../shared/lib/crypto";
+import { and, desc, eq } from "drizzle-orm"
+import { nanoid } from "nanoid"
+import { db } from "../../shared/db"
+import { encrypt } from "../../shared/lib/crypto"
+import type { InsertMailbox, Mailbox } from "./mailbox.schema"
+import { mailbox } from "./mailbox.schema"
+
+// Type for mailbox metadata
+type MailboxMetadata = {
+  displayName?: string
+  [key: string]: unknown
+}
+
+// Type for SMTP update data
+type SmtpUpdateData = {
+  metadata?: MailboxMetadata
+  smtpHost?: string
+  smtpPort?: number
+  smtpUsername?: string
+  smtpPassword?: string
+  smtpSecure?: boolean
+}
 
 // Type for safe mailbox data (without sensitive tokens)
-export type SafeMailbox = Omit<Mailbox, "accessToken" | "refreshToken" | "smtpPassword">;
+export type SafeMailbox = Omit<Mailbox, "accessToken" | "refreshToken" | "smtpPassword">
 
 /**
  * Remove sensitive data from mailbox object
  */
 function sanitizeMailbox(mb: Mailbox): SafeMailbox {
-  const { accessToken, refreshToken, smtpPassword, ...safe } = mb;
-  return safe;
+  const { accessToken, refreshToken, smtpPassword, ...safe } = mb
+  return safe
 }
 
 export const mailboxService = {
@@ -25,17 +41,17 @@ export const mailboxService = {
       .select()
       .from(mailbox)
       .where(eq(mailbox.organizationId, organizationId))
-      .orderBy(desc(mailbox.createdAt));
-    
-    return mailboxes.map(sanitizeMailbox);
+      .orderBy(desc(mailbox.createdAt))
+
+    return mailboxes.map(sanitizeMailbox)
   },
 
   /**
    * Get a specific mailbox by ID (without sensitive data for API responses)
    */
   async getById(id: string, organizationId: string): Promise<SafeMailbox | null> {
-    const result = await this.getByIdInternal(id, organizationId);
-    return result ? sanitizeMailbox(result) : null;
+    const result = await this.getByIdInternal(id, organizationId)
+    return result ? sanitizeMailbox(result) : null
   },
 
   /**
@@ -46,15 +62,10 @@ export const mailboxService = {
     const [result] = await db
       .select()
       .from(mailbox)
-      .where(
-        and(
-          eq(mailbox.id, id),
-          eq(mailbox.organizationId, organizationId)
-        )
-      )
-      .limit(1);
+      .where(and(eq(mailbox.id, id), eq(mailbox.organizationId, organizationId)))
+      .limit(1)
 
-    return result || null;
+    return result || null
   },
 
   /**
@@ -64,15 +75,10 @@ export const mailboxService = {
     const [result] = await db
       .select()
       .from(mailbox)
-      .where(
-        and(
-          eq(mailbox.email, email),
-          eq(mailbox.organizationId, organizationId)
-        )
-      )
-      .limit(1);
+      .where(and(eq(mailbox.email, email), eq(mailbox.organizationId, organizationId)))
+      .limit(1)
 
-    return result || null;
+    return result || null
   },
 
   /**
@@ -85,27 +91,27 @@ export const mailboxService = {
         id: nanoid(),
         ...data,
       })
-      .returning();
+      .returning()
 
-    return newMailbox;
+    return newMailbox
   },
 
   /**
    * Create SMTP mailbox with encrypted password
    */
   async createSmtp(data: {
-    organizationId: string;
-    memberId: string;
-    email: string;
-    displayName?: string;
-    smtpHost: string;
-    smtpPort: number;
-    smtpUsername: string;
-    smtpPassword: string;
-    smtpSecure: boolean;
+    organizationId: string
+    memberId: string
+    email: string
+    displayName?: string
+    smtpHost: string
+    smtpPort: number
+    smtpUsername: string
+    smtpPassword: string
+    smtpSecure: boolean
   }): Promise<Mailbox> {
     // Encrypt the SMTP password
-    const encryptedPassword = encrypt(data.smtpPassword);
+    const encryptedPassword = encrypt(data.smtpPassword)
 
     const [newMailbox] = await db
       .insert(mailbox)
@@ -124,9 +130,9 @@ export const mailboxService = {
         dailyLimit: 100, // Default limit for SMTP
         metadata: data.displayName ? { displayName: data.displayName } : null,
       })
-      .returning();
+      .returning()
 
-    return newMailbox;
+    return newMailbox
   },
 
   /**
@@ -135,10 +141,10 @@ export const mailboxService = {
   async updateTokens(
     id: string,
     tokens: {
-      accessToken: string;
-      refreshToken?: string;
-      tokenExpiresAt: Date;
-    }
+      accessToken: string
+      refreshToken?: string
+      tokenExpiresAt: Date
+    },
   ): Promise<Mailbox | null> {
     const [updated] = await db
       .update(mailbox)
@@ -151,9 +157,9 @@ export const mailboxService = {
         lastSyncAt: new Date(),
       })
       .where(eq(mailbox.id, id))
-      .returning();
+      .returning()
 
-    return updated || null;
+    return updated || null
   },
 
   /**
@@ -163,68 +169,55 @@ export const mailboxService = {
     id: string,
     organizationId: string,
     data: {
-      displayName?: string;
-      smtpHost?: string;
-      smtpPort?: number;
-      smtpUsername?: string;
-      smtpPassword?: string;
-      smtpSecure?: boolean;
-    }
+      displayName?: string
+      smtpHost?: string
+      smtpPort?: number
+      smtpUsername?: string
+      smtpPassword?: string
+      smtpSecure?: boolean
+    },
   ): Promise<Mailbox | null> {
-    const updateData: any = {};
+    const updateData: SmtpUpdateData = {}
 
     if (data.displayName !== undefined) {
       // Store displayName in metadata
       const [current] = await db
         .select()
         .from(mailbox)
-        .where(
-          and(
-            eq(mailbox.id, id),
-            eq(mailbox.organizationId, organizationId)
-          )
-        )
-        .limit(1);
+        .where(and(eq(mailbox.id, id), eq(mailbox.organizationId, organizationId)))
+        .limit(1)
 
       if (current) {
+        const currentMetadata = (current.metadata as MailboxMetadata) || {}
         updateData.metadata = {
-          ...(current.metadata as any),
+          ...currentMetadata,
           displayName: data.displayName,
-        };
+        }
       }
     }
 
-    if (data.smtpHost !== undefined) updateData.smtpHost = data.smtpHost;
-    if (data.smtpPort !== undefined) updateData.smtpPort = data.smtpPort;
-    if (data.smtpUsername !== undefined) updateData.smtpUsername = data.smtpUsername;
+    if (data.smtpHost !== undefined) updateData.smtpHost = data.smtpHost
+    if (data.smtpPort !== undefined) updateData.smtpPort = data.smtpPort
+    if (data.smtpUsername !== undefined) updateData.smtpUsername = data.smtpUsername
     if (data.smtpPassword !== undefined) {
       // Encrypt the new password
-      updateData.smtpPassword = encrypt(data.smtpPassword);
+      updateData.smtpPassword = encrypt(data.smtpPassword)
     }
-    if (data.smtpSecure !== undefined) updateData.smtpSecure = data.smtpSecure;
+    if (data.smtpSecure !== undefined) updateData.smtpSecure = data.smtpSecure
 
     const [updated] = await db
       .update(mailbox)
       .set(updateData)
-      .where(
-        and(
-          eq(mailbox.id, id),
-          eq(mailbox.organizationId, organizationId)
-        )
-      )
-      .returning();
+      .where(and(eq(mailbox.id, id), eq(mailbox.organizationId, organizationId)))
+      .returning()
 
-    return updated || null;
+    return updated || null
   },
 
   /**
    * Update mailbox status
    */
-  async updateStatus(
-    id: string,
-    status: string,
-    error?: string
-  ): Promise<Mailbox | null> {
+  async updateStatus(id: string, status: string, error?: string): Promise<Mailbox | null> {
     const [updated] = await db
       .update(mailbox)
       .set({
@@ -233,29 +226,23 @@ export const mailboxService = {
         lastSyncAt: new Date(),
       })
       .where(eq(mailbox.id, id))
-      .returning();
+      .returning()
 
-    return updated || null;
+    return updated || null
   },
 
   /**
    * Increment daily sent counter
    */
   async incrementDailySent(id: string): Promise<void> {
-    const [current] = await db
-      .select()
-      .from(mailbox)
-      .where(eq(mailbox.id, id))
-      .limit(1);
+    const [current] = await db.select().from(mailbox).where(eq(mailbox.id, id)).limit(1)
 
-    if (!current) return;
+    if (!current) return
 
     // Check if we need to reset the counter (new day)
-    const lastReset = current.lastResetAt;
-    const now = new Date();
-    const shouldReset =
-      !lastReset ||
-      now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000;
+    const lastReset = current.lastResetAt
+    const now = new Date()
+    const shouldReset = !lastReset || now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000
 
     if (shouldReset) {
       await db
@@ -264,98 +251,86 @@ export const mailboxService = {
           dailySent: 1,
           lastResetAt: now,
         })
-        .where(eq(mailbox.id, id));
+        .where(eq(mailbox.id, id))
     } else {
       await db
         .update(mailbox)
         .set({
           dailySent: current.dailySent + 1,
         })
-        .where(eq(mailbox.id, id));
+        .where(eq(mailbox.id, id))
     }
   },
 
   /**
    * Update signature
    */
-  async updateSignature(
-    id: string,
-    organizationId: string,
-    signature: string
-  ): Promise<Mailbox | null> {
+  async updateSignature(id: string, organizationId: string, signature: string): Promise<Mailbox | null> {
     const [updated] = await db
       .update(mailbox)
       .set({ signature })
-      .where(
-        and(
-          eq(mailbox.id, id),
-          eq(mailbox.organizationId, organizationId)
-        )
-      )
-      .returning();
+      .where(and(eq(mailbox.id, id), eq(mailbox.organizationId, organizationId)))
+      .returning()
 
-    return updated || null;
+    return updated || null
   },
 
   /**
    * Update daily limit
    */
-  async updateDailyLimit(
-    id: string,
-    organizationId: string,
-    dailyLimit: number
-  ): Promise<Mailbox | null> {
+  async updateDailyLimit(id: string, organizationId: string, dailyLimit: number): Promise<Mailbox | null> {
     const [updated] = await db
       .update(mailbox)
       .set({ dailyLimit })
-      .where(
-        and(
-          eq(mailbox.id, id),
-          eq(mailbox.organizationId, organizationId)
-        )
-      )
-      .returning();
+      .where(and(eq(mailbox.id, id), eq(mailbox.organizationId, organizationId)))
+      .returning()
 
-    return updated || null;
+    return updated || null
   },
 
   /**
    * Delete mailbox
    */
   async delete(id: string, organizationId: string): Promise<boolean> {
-    const result = await db
-      .delete(mailbox)
-      .where(
-        and(
-          eq(mailbox.id, id),
-          eq(mailbox.organizationId, organizationId)
-        )
-      );
+    // First check if the mailbox exists
+    const existing = await db
+      .select({ id: mailbox.id })
+      .from(mailbox)
+      .where(and(eq(mailbox.id, id), eq(mailbox.organizationId, organizationId)))
+      .limit(1)
 
-    //@ts-ignore type mismatch
-    return result.rowCount !== null && result.rowCount > 0;
+    if (existing.length === 0) {
+      return false
+    }
+
+    // Delete the mailbox
+    await db.delete(mailbox).where(and(eq(mailbox.id, id), eq(mailbox.organizationId, organizationId)))
+
+    return true
   },
 
   /**
    * Get available mailboxes for sending (connected, under daily limit)
    */
   async getAvailableForSending(organizationId: string): Promise<Mailbox[]> {
-    const allMailboxes = await this.list(organizationId);
-    
-    //@ts-ignore type mismatch
+    // Get all mailboxes with full data including tokens (for internal use)
+    const allMailboxes = await db
+      .select()
+      .from(mailbox)
+      .where(eq(mailbox.organizationId, organizationId))
+      .orderBy(desc(mailbox.createdAt))
+
     return allMailboxes.filter((mb) => {
-      if (mb.status !== "connected") return false;
+      if (mb.status !== "connected") return false
 
       // Check daily limit
-      const lastReset = mb.lastResetAt;
-      const now = new Date();
-      const shouldReset =
-        !lastReset ||
-        now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000;
+      const lastReset = mb.lastResetAt
+      const now = new Date()
+      const shouldReset = !lastReset || now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000
 
-      if (shouldReset) return true;
+      if (shouldReset) return true
 
-      return mb.dailySent < mb.dailyLimit;
-    });
+      return mb.dailySent < mb.dailyLimit
+    })
   },
-};
+}

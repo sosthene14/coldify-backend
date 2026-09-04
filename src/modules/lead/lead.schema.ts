@@ -1,18 +1,8 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  integer,
-  boolean,
-  pgEnum,
-  uniqueIndex,
-  index,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { member, organization } from "../../shared/db/schema/auth";
-import { campaign } from "../campaign/campaign.schema";
-import { organizationCustomField } from "../organization-custom-field/organization-custom-field.schema";
-
+import { relations } from "drizzle-orm"
+import { boolean, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { member, organization } from "../../shared/db/schema/auth"
+import { campaign } from "../campaign/campaign.schema"
+import { organizationCustomField } from "../organization-custom-field/organization-custom-field.schema"
 
 export const leadStatus = pgEnum("lead_status", [
   "new",
@@ -25,7 +15,7 @@ export const leadStatus = pgEnum("lead_status", [
   "bounced",
   "unsubscribed",
   "do_not_contact",
-]);
+])
 
 export const leadSource = pgEnum("lead_source", [
   "manual",
@@ -35,7 +25,7 @@ export const leadSource = pgEnum("lead_source", [
   "api",
   "form",
   "other",
-]);
+])
 
 // ── Lead ───────────────────────────────────────────────────────
 export const lead = pgTable(
@@ -109,7 +99,7 @@ export const lead = pgTable(
     index("lead_ownerId_idx").on(table.ownerId),
     index("lead_companyDomain_idx").on(table.companyDomain),
   ],
-);
+)
 
 // ── Statut du lead PAR campagne (many-to-many lead <-> campaign) ─
 export const leadCampaignStatus = pgTable(
@@ -139,7 +129,7 @@ export const leadCampaignStatus = pgTable(
     index("lead_campaign_status_leadId_idx").on(table.leadId),
     index("lead_campaign_status_campaignId_idx").on(table.mailId),
   ],
-);
+)
 
 // ── Champs personnalisés, valeurs ancrées sur les définitions partagées ──
 export const leadCustomField = pgTable(
@@ -172,13 +162,9 @@ export const leadCustomField = pgTable(
     // une seule valeur par champ pour un lead donné
     uniqueIndex("lead_custom_field_lead_field_uidx").on(table.leadId, table.fieldId),
     // recherche "tous les leads de l'org où fieldId=X et value=Y"
-    index("lead_custom_field_org_field_value_idx").on(
-      table.organizationId,
-      table.fieldId,
-      table.value,
-    ),
+    index("lead_custom_field_org_field_value_idx").on(table.organizationId, table.fieldId, table.value),
   ],
-);
+)
 
 export const leadCustomFieldRelations = relations(leadCustomField, ({ one }) => ({
   lead: one(lead, { fields: [leadCustomField.leadId], references: [lead.id] }),
@@ -190,7 +176,7 @@ export const leadCustomFieldRelations = relations(leadCustomField, ({ one }) => 
     fields: [leadCustomField.fieldId],
     references: [organizationCustomField.id],
   }),
-}));
+}))
 
 export const leadRelations = relations(lead, ({ one, many }) => ({
   organization: one(organization, {
@@ -200,15 +186,12 @@ export const leadRelations = relations(lead, ({ one, many }) => ({
   owner: one(member, { fields: [lead.ownerId], references: [member.id] }),
   campaignStatuses: many(leadCampaignStatus),
   customFields: many(leadCustomField),
-}));
+}))
 
-export const leadCampaignStatusRelations = relations(
-  leadCampaignStatus,
-  ({ one }) => ({
-    lead: one(lead, { fields: [leadCampaignStatus.leadId], references: [lead.id] }),
-    campaign: one(campaign, {
-      fields: [leadCampaignStatus.mailId],
-      references: [campaign.id],
-    }),
+export const leadCampaignStatusRelations = relations(leadCampaignStatus, ({ one }) => ({
+  lead: one(lead, { fields: [leadCampaignStatus.leadId], references: [lead.id] }),
+  campaign: one(campaign, {
+    fields: [leadCampaignStatus.mailId],
+    references: [campaign.id],
   }),
-);
+}))

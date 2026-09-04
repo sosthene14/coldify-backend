@@ -1,7 +1,6 @@
-import { pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { organization, user } from "../../shared/db/schema/auth";
- 
+import { relations } from "drizzle-orm"
+import { pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { organization, user } from "../../shared/db/schema/auth"
 
 export const folder = pgTable(
   "folder",
@@ -24,10 +23,8 @@ export const folder = pgTable(
       .$onUpdate(() => new Date())
       .notNull(),
   },
-  (table) => [
-    uniqueIndex("folder_org_name_uidx").on(table.organizationId, table.name),
-  ],
-);
+  (table) => [uniqueIndex("folder_org_name_uidx").on(table.organizationId, table.name)],
+)
 
 export const folderRelations = relations(folder, ({ one }) => ({
   organization: one(organization, {
@@ -38,4 +35,4 @@ export const folderRelations = relations(folder, ({ one }) => ({
     fields: [folder.createdBy],
     references: [user.id],
   }),
-}));
+}))

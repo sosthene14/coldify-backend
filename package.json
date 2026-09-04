@@ -5,11 +5,15 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
     "migrate:notification-preferences": "bun run scripts/run-notification-preferences-migration.ts",
-    "migrate:quota": "bun run scripts/run-quota-migration.ts"
+    "migrate:quota": "bun run scripts/run-quota-migration.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
   },
   "dependencies": {
     "@elysiajs/cors": "^1.4.2",
     "@paralleldrive/cuid2": "^3.3.0",
+    "@types/web-push": "^3.6.4",
     "axios": "^1.20.0",
     "better-auth": "^1.6.25",
     "bullmq": "^5.81.2",
@@ -24,9 +28,11 @@
     "nodemailer": "^9.0.5",
     "postgres": "^3.4.9",
     "resend": "^6.18.0",
-    "sanitize-html": "^2.17.6"
+    "sanitize-html": "^2.17.6",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.12",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.17",
     "@types/sanitize-html": "^2.16.1",

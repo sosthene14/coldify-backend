@@ -1,9 +1,9 @@
-import { eq, and } from "drizzle-orm";
-import { campaign, campaignStatus } from "./campaign.schema";
-import { db, TenantContext } from "../../shared";
-import { member } from "../../shared/db/schema";
+import { and, eq } from "drizzle-orm"
+import { db, type TenantContext } from "../../shared"
+import { member } from "../../shared/db/schema"
+import { campaign, type campaignStatus } from "./campaign.schema"
 
-type CampaignStatus = (typeof campaignStatus.enumValues)[number];
+type CampaignStatus = (typeof campaignStatus.enumValues)[number]
 
 async function getMemberId(tenant: TenantContext) {
   // superadmin agit "en tant qu'admin" sur l'org courante mais n'a pas forcément
@@ -11,15 +11,10 @@ async function getMemberId(tenant: TenantContext) {
   const [row] = await db
     .select({ id: member.id })
     .from(member)
-    .where(
-      and(
-        eq(member.userId, tenant.userId),
-        eq(member.organizationId, tenant.organizationId),
-      ),
-    )
-    .limit(1);
+    .where(and(eq(member.userId, tenant.userId), eq(member.organizationId, tenant.organizationId)))
+    .limit(1)
 
-  return row?.id ?? null;
+  return row?.id ?? null
 }
 
 export const campaignService = {
@@ -31,54 +26,39 @@ export const campaignService = {
    */
   async list(tenant: TenantContext) {
     if (tenant.isSuperAdmin) {
-      return db.select().from(campaign);
+      return db.select().from(campaign)
     }
 
     if (tenant.role === "admin") {
-      return db
-        .select()
-        .from(campaign)
-        .where(eq(campaign.organizationId, tenant.organizationId));
+      return db.select().from(campaign).where(eq(campaign.organizationId, tenant.organizationId))
     }
 
-    const memberId = await getMemberId(tenant);
-    if (!memberId) return [];
+    const memberId = await getMemberId(tenant)
+    if (!memberId) return []
 
     return db
       .select()
       .from(campaign)
-      .where(
-        and(
-          eq(campaign.organizationId, tenant.organizationId),
-          eq(campaign.createdBy, memberId),
-        ),
-      );
+      .where(and(eq(campaign.organizationId, tenant.organizationId), eq(campaign.createdBy, memberId)))
   },
 
   async getById(tenant: TenantContext, id: string) {
-    const [row] = await db
-      .select()
-      .from(campaign)
-      .where(eq(campaign.id, id))
-      .limit(1);
+    const [row] = await db.select().from(campaign).where(eq(campaign.id, id)).limit(1)
 
-    if (!row) return null;
-    if (tenant.isSuperAdmin) return row;
-    if (row.organizationId !== tenant.organizationId) return null;
-    if (tenant.role === "admin") return row;
+    if (!row) return null
+    if (tenant.isSuperAdmin) return row
+    if (row.organizationId !== tenant.organizationId) return null
+    if (tenant.role === "admin") return row
 
-    const memberId = await getMemberId(tenant);
-    if (row.createdBy !== memberId) return null;
+    const memberId = await getMemberId(tenant)
+    if (row.createdBy !== memberId) return null
 
-    return row;
+    return row
   },
 
-  async create(
-    tenant: TenantContext,
-    data: { id: string; name: string; status?: CampaignStatus },
-  ) {
-    const memberId = await getMemberId(tenant);
-    if (!memberId) throw new Error("Aucun membership trouvé pour cet utilisateur");
+  async create(tenant: TenantContext, data: { id: string; name: string; status?: CampaignStatus }) {
+    const memberId = await getMemberId(tenant)
+    if (!memberId) throw new Error("Aucun membership trouvé pour cet utilisateur")
 
     const [row] = await db
       .insert(campaign)
@@ -87,33 +67,25 @@ export const campaignService = {
         organizationId: tenant.organizationId,
         createdBy: memberId,
       })
-      .returning();
+      .returning()
 
-    return row;
+    return row
   },
 
-  async update(
-    tenant: TenantContext,
-    id: string,
-    data: { name?: string; status?: CampaignStatus },
-  ) {
-    const existing = await this.getById(tenant, id);
-    if (!existing) return null;
+  async update(tenant: TenantContext, id: string, data: { name?: string; status?: CampaignStatus }) {
+    const existing = await this.getById(tenant, id)
+    if (!existing) return null
 
-    const [row] = await db
-      .update(campaign)
-      .set(data)
-      .where(eq(campaign.id, id))
-      .returning();
+    const [row] = await db.update(campaign).set(data).where(eq(campaign.id, id)).returning()
 
-    return row;
+    return row
   },
 
   async remove(tenant: TenantContext, id: string) {
-    const existing = await this.getById(tenant, id);
-    if (!existing) return null;
+    const existing = await this.getById(tenant, id)
+    if (!existing) return null
 
-    await db.delete(campaign).where(eq(campaign.id, id));
-    return existing;
+    await db.delete(campaign).where(eq(campaign.id, id))
+    return existing
   },
-};
+}

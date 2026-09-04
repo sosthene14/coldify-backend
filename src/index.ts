@@ -1,38 +1,49 @@
-import { Elysia } from "elysia";
-import { cors } from "@elysiajs/cors";
-import { auth } from "./shared/lib/auth";
-import { initMinIO } from "./shared/lib/minio";
-import "./shared/workers/email.worker";
-import "./shared/workers/attachment-cleanup.worker";
-import "./shared/workers/attachment-cleanup-scheduler";
-import "./shared/workers/scheduled-email.worker";
+import { cors } from "@elysiajs/cors"
+import { Elysia } from "elysia"
+import { auth } from "./shared/lib/auth"
+import { initMinIO } from "./shared/lib/minio"
+import "./shared/workers/email.worker"
+import "./shared/workers/attachment-cleanup.worker"
+import "./shared/workers/attachment-cleanup-scheduler"
+import "./shared/workers/scheduled-email.worker"
 
+// WebSocket message types
+type WebSocketMessage =
+  | {
+      type: "join:user"
+      userId: string
+    }
+  | {
+      type: string
+      [key: string]: unknown
+    }
+
+import { campaignController } from "./modules/campaign"
+import { conversationController } from "./modules/conversation"
+import { emailHistoryController } from "./modules/email-history"
 // Import des contrôleurs des modules
-import { folderController } from "./modules/folder";
-import { campaignController } from "./modules/campaign";
-import { usageController } from "./modules/usage";
-import { leadController } from "./modules/lead";
-import { templateController } from "./modules/template";
-import { reportingController } from "./modules/reporting";
-import { conversationController } from "./modules/conversation";
-import { calendarEventController } from "./modules/calendar-event";
-import { organizationCustomFieldController } from "./modules/organization-custom-field";
-import { uploadController } from "./modules/upload";
-import { mailboxController } from "./modules/mailbox";
-import { emailHistoryController } from "./modules/email-history";
-import { scheduledEmailController } from "./modules/scheduled-email/scheduled-email.controller";
-import { emailTrackingController } from "./modules/reporting/email-tracking.controller";
-import { userController } from "./modules/user/user.controller";
-import { organizationQuotaController } from "./modules/organization-quota/organization-quota.controller";
-import { subscriptionController } from "./modules/subscriptions/subscription.controller";
-import { initWebSocket, joinOrganization, leaveOrganization } from "./shared/lib/websocket";
+import { folderController } from "./modules/folder"
+import { leadController } from "./modules/lead"
+import { mailboxController } from "./modules/mailbox"
+import { organizationCustomFieldController } from "./modules/organization-custom-field"
+import { organizationQuotaController } from "./modules/organization-quota/organization-quota.controller"
+import { reportingController } from "./modules/reporting"
+import { emailTrackingController } from "./modules/reporting/email-tracking.controller"
+import { scheduledEmailController } from "./modules/scheduled-email/scheduled-email.controller"
+import { subscriptionController } from "./modules/subscriptions/subscription.controller"
+import { templateController } from "./modules/template"
+import { uploadController } from "./modules/upload"
+import { userController } from "./modules/user/user.controller"
+import { initWebSocket, joinUser, leaveUser } from "./shared/lib/websocket"
 
 // Initialiser MinIO au démarrage
-initMinIO().then(() => {
-  console.log("✓ MinIO initialized");
-}).catch((err) => {
-  console.error("✗ MinIO initialization failed:", err);
-});
+initMinIO()
+  .then(() => {
+    console.log("✓ MinIO initialized")
+  })
+  .catch((err) => {
+    console.error("✗ MinIO initialization failed:", err)
+  })
 
 const app = new Elysia()
   .use(
@@ -45,72 +56,77 @@ const app = new Elysia()
   )
   .onBeforeHandle(({ set }) => {
     // Ensure UTF-8 encoding for all responses
-    set.headers['Content-Type'] = 'application/json; charset=utf-8'
+    set.headers["Content-Type"] = "application/json; charset=utf-8"
   })
-  .mount(auth.handler)
   .get("/", () => "Hello Elysia")
-  .use(folderController)
-  .use(campaignController)
-  .use(usageController)
-  .use(leadController)
-  .use(templateController)
-  .use(organizationCustomFieldController)
-  .use(conversationController)
-  .use(calendarEventController)
-  .use(reportingController)
-  .use(uploadController)
-  .use(mailboxController)
-  .use(emailHistoryController)
-  .use(scheduledEmailController)
-  .use(userController)
-  .use(organizationQuotaController)
-  .use(subscriptionController)
-  .use(emailTrackingController) // Public tracking endpoint
+  .group("/api", (app) =>
+    app
+      .mount(auth.handler)
+      .use(folderController)
+      .use(campaignController)
+      .use(leadController)
+      .use(templateController)
+      .use(organizationCustomFieldController)
+      .use(conversationController)
+      .use(reportingController)
+      .use(uploadController)
+      .use(mailboxController)
+      .use(emailHistoryController)
+      .use(scheduledEmailController)
+      .use(userController)
+      .use(organizationQuotaController)
+      .use(subscriptionController),
+  )
+  .use(emailTrackingController) // Public tracking endpoint (keep outside /api for backwards compatibility)
   .ws("/ws", {
     open(ws) {
-      console.log("[WebSocket] Client connected");
-      ws.send(JSON.stringify({ type: "connected" }));
+      console.log("[WebSocket] ✅ User connected")
+      ws.send(JSON.stringify({ type: "connected" }))
     },
-    //@ts-ignore type mismatch
+    //@ts-nocheck type mismatch
     message(ws, message) {
       try {
         // Handle message as object (Bun auto-parses) or string
-        let data: any;
-        if (typeof message === 'string') {
-          data = JSON.parse(message);
+        let data: WebSocketMessage
+        if (typeof message === "string") {
+          data = JSON.parse(message)
         } else if (Buffer.isBuffer(message)) {
-          data = JSON.parse(message.toString());
+          data = JSON.parse(message.toString())
         } else {
-          data = message;
+          data = message as WebSocketMessage
         }
-        
-        if (data.type === "join:organization" && data.organizationId) {
-          //@ts-ignore type mismatch
-          joinOrganization(ws, data.organizationId);
-          ws.send(JSON.stringify({ 
-            type: "joined", 
-            organizationId: data.organizationId 
-          }));
+
+        if (data.type === "join:user" && data.userId) {
+          //@ts-expect-error type mismatch
+          joinUser(ws, data.userId)
+          console.log(`[WebSocket] 🔗 User joined: ${data.userId}`)
+          ws.send(
+            JSON.stringify({
+              type: "joined",
+              userId: data.userId,
+            }),
+          )
         }
       } catch (error) {
-        console.error("[WebSocket] Error parsing message:", error);
+        console.error("[WebSocket] Error parsing message:", error)
       }
     },
     close(ws) {
-      console.log("[WebSocket] Client disconnected");
-      //@ts-ignore type mismatch
-      leaveOrganization(ws);
+      console.log("[WebSocket] ❌ User disconnected")
+      //@ts-expect-error type mismatch
+      leaveUser(ws)
     },
   })
-  .listen(3001);
+  .listen({
+    hostname: "0.0.0.0",
+    port: 3001,
+  })
 
 // Initialize WebSocket tracking
-//@ts-ignore type mismatch
-initWebSocket(app);
+//@ts-expect-error type mismatch
+initWebSocket(app)
 
-console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
-);
+console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`)
 
 // Export for WebSocket access
-export { app };
+export { app }

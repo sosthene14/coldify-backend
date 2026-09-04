@@ -1,7 +1,6 @@
-import { Elysia, t } from "elysia";
-import { requireRole, tenantPlugin } from "../../shared";
-import { leadService } from "./lead.service";
-
+import { Elysia, t } from "elysia"
+import { requireRole, tenantPlugin } from "../../shared"
+import { leadService } from "./lead.service"
 
 const statusSchema = t.Union([
   t.Literal("new"),
@@ -14,7 +13,7 @@ const statusSchema = t.Union([
   t.Literal("bounced"),
   t.Literal("unsubscribed"),
   t.Literal("do_not_contact"),
-]);
+])
 
 const sourceSchema = t.Union([
   t.Literal("manual"),
@@ -24,7 +23,7 @@ const sourceSchema = t.Union([
   t.Literal("api"),
   t.Literal("form"),
   t.Literal("other"),
-]);
+])
 
 export const leadController = new Elysia({ prefix: "/leads" })
   .use(tenantPlugin)
@@ -33,13 +32,9 @@ export const leadController = new Elysia({ prefix: "/leads" })
     "/",
     async ({ tenant, query }) => {
       if (query.customFieldId && query.customFieldValue) {
-        return leadService.listByCustomField(
-          tenant,
-          query.customFieldId,
-          query.customFieldValue,
-        );
+        return leadService.listByCustomField(tenant, query.customFieldId, query.customFieldValue)
       }
-      return leadService.list(tenant);
+      return leadService.list(tenant)
     },
     {
       query: t.Object({
@@ -52,9 +47,9 @@ export const leadController = new Elysia({ prefix: "/leads" })
   .get(
     "/:id",
     async ({ tenant, params, status }) => {
-      const row = await leadService.getById(tenant, params.id);
-      if (!row) return status(404, "Lead introuvable");
-      return row;
+      const row = await leadService.getById(tenant, params.id)
+      if (!row) return status(404, "Lead introuvable")
+      return row
     },
     { params: t.Object({ id: t.String() }) },
   )
@@ -62,9 +57,9 @@ export const leadController = new Elysia({ prefix: "/leads" })
   .get(
     "/:id/campaigns",
     async ({ tenant, params, status }) => {
-      const rows = await leadService.listCampaignStatuses(tenant, params.id);
-      if (rows === null) return status(404, "Lead introuvable");
-      return rows;
+      const rows = await leadService.listCampaignStatuses(tenant, params.id)
+      if (rows === null) return status(404, "Lead introuvable")
+      return rows
     },
     { params: t.Object({ id: t.String() }) },
   )
@@ -80,7 +75,7 @@ export const leadController = new Elysia({ prefix: "/leads" })
           return leadService.create(tenant, {
             id: crypto.randomUUID(),
             ...body,
-          });
+          })
         },
         {
           body: t.Object({
@@ -91,9 +86,7 @@ export const leadController = new Elysia({ prefix: "/leads" })
             companyName: t.Optional(t.String()),
             source: t.Optional(sourceSchema),
             ownerId: t.Optional(t.String()), // ignoré si pas admin (cf. service)
-            customFields: t.Optional(
-              t.Array(t.Object({ fieldId: t.String(), value: t.String() })),
-            ),
+            customFields: t.Optional(t.Array(t.Object({ fieldId: t.String(), value: t.String() }))),
           }),
         },
       )
@@ -101,9 +94,9 @@ export const leadController = new Elysia({ prefix: "/leads" })
       .patch(
         "/:id",
         async ({ tenant, params, body, error }) => {
-          const row = await leadService.update(tenant, params.id, body);
-          if (!row) return error(404, "Lead introuvable ou accès refusé");
-          return row;
+          const row = await leadService.update(tenant, params.id, body)
+          if (!row) return error(404, "Lead introuvable ou accès refusé")
+          return row
         },
         {
           params: t.Object({ id: t.String() }),
@@ -118,9 +111,7 @@ export const leadController = new Elysia({ prefix: "/leads" })
             tags: t.Optional(t.Array(t.String())),
             notes: t.Optional(t.String()),
             ownerId: t.Optional(t.String()),
-            customFields: t.Optional(
-              t.Array(t.Object({ fieldId: t.String(), value: t.String() })),
-            ),
+            customFields: t.Optional(t.Array(t.Object({ fieldId: t.String(), value: t.String() }))),
           }),
         },
       )
@@ -128,9 +119,9 @@ export const leadController = new Elysia({ prefix: "/leads" })
       .delete(
         "/:id",
         async ({ tenant, params, error }) => {
-          const row = await leadService.remove(tenant, params.id);
-          if (!row) return error(404, "Lead introuvable ou accès refusé");
-          return { success: true };
+          const row = await leadService.remove(tenant, params.id)
+          if (!row) return error(404, "Lead introuvable ou accès refusé")
+          return { success: true }
         },
         { params: t.Object({ id: t.String() }) },
       )
@@ -138,14 +129,9 @@ export const leadController = new Elysia({ prefix: "/leads" })
       .put(
         "/:id/campaigns/:mailId",
         async ({ tenant, params, body, error }) => {
-          const row = await leadService.upsertCampaignStatus(
-            tenant,
-            params.id,
-            params.mailId,
-            body,
-          );
-          if (!row) return error(404, "Lead introuvable ou accès refusé");
-          return row;
+          const row = await leadService.upsertCampaignStatus(tenant, params.id, params.mailId, body)
+          if (!row) return error(404, "Lead introuvable ou accès refusé")
+          return row
         },
         {
           params: t.Object({ id: t.String(), mailId: t.String() }),
@@ -155,4 +141,4 @@ export const leadController = new Elysia({ prefix: "/leads" })
           }),
         },
       ),
-  );
+  )

@@ -1,20 +1,11 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  integer,
-  real,
-  boolean,
-  uniqueIndex,
-  index,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { member, organization } from "../../shared/db/schema";
+import { relations } from "drizzle-orm"
+import { boolean, index, integer, pgTable, real, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { member, organization } from "../../shared/db/schema"
 
 // Import emailHistory for relation (avoid circular import by using lazy function)
-let emailHistory: any;
+let emailHistory: any
 try {
-  emailHistory = require("../email-history/email-history.schema").emailHistory;
+  emailHistory = require("../email-history/email-history.schema").emailHistory
 } catch {
   // Will be set later when the module is loaded
 }
@@ -58,7 +49,7 @@ export const template = pgTable(
     index("template_organizationId_idx").on(table.organizationId),
     index("template_ownerId_idx").on(table.ownerId),
   ],
-);
+)
 
 // Favoris: personnel, un member peut star un template qu'il ne possède pas
 export const memberStarredTemplate = pgTable(
@@ -73,10 +64,8 @@ export const memberStarredTemplate = pgTable(
       .references(() => template.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [
-    uniqueIndex("member_starred_template_uidx").on(table.memberId, table.templateId),
-  ],
-);
+  (table) => [uniqueIndex("member_starred_template_uidx").on(table.memberId, table.templateId)],
+)
 
 export const templateRelations = relations(template, ({ one, many }) => ({
   organization: one(organization, {
@@ -85,20 +74,17 @@ export const templateRelations = relations(template, ({ one, many }) => ({
   }),
   owner: one(member, { fields: [template.ownerId], references: [member.id] }),
   starredBy: many(memberStarredTemplate),
-  //@ts-ignore type mismatch
+  //@ts-expect-error type mismatch
   emailHistory: many(() => emailHistory),
-}));
+}))
 
-export const memberStarredTemplateRelations = relations(
-  memberStarredTemplate,
-  ({ one }) => ({
-    member: one(member, {
-      fields: [memberStarredTemplate.memberId],
-      references: [member.id],
-    }),
-    template: one(template, {
-      fields: [memberStarredTemplate.templateId],
-      references: [template.id],
-    }),
+export const memberStarredTemplateRelations = relations(memberStarredTemplate, ({ one }) => ({
+  member: one(member, {
+    fields: [memberStarredTemplate.memberId],
+    references: [member.id],
   }),
-);
+  template: one(template, {
+    fields: [memberStarredTemplate.templateId],
+    references: [template.id],
+  }),
+}))

@@ -1,9 +1,8 @@
-import { Elysia, t } from "elysia";
-import { requireRole, tenantPlugin } from "../../shared";
-import { organizationCustomFieldService } from "./organization-custom-field.service";
+import { Elysia, t } from "elysia"
+import { requireRole, tenantPlugin } from "../../shared"
+import { organizationCustomFieldService } from "./organization-custom-field.service"
 
-
-const fieldTypeSchema = t.Union([t.Literal("text"), t.Literal("date"), t.Literal("select")]);
+const fieldTypeSchema = t.Union([t.Literal("text"), t.Literal("date"), t.Literal("select")])
 
 export const organizationCustomFieldController = new Elysia({ prefix: "/custom-fields" })
   .use(tenantPlugin)
@@ -13,9 +12,9 @@ export const organizationCustomFieldController = new Elysia({ prefix: "/custom-f
   .get(
     "/:id",
     async ({ tenant, params, status }) => {
-      const row = await organizationCustomFieldService.getById(tenant, params.id);
-      if (!row) return status(404, "Champ introuvable");
-      return row;
+      const row = await organizationCustomFieldService.getById(tenant, params.id)
+      if (!row) return status(404, "Champ introuvable")
+      return row
     },
     { params: t.Object({ id: t.String() }) },
   )
@@ -31,9 +30,9 @@ export const organizationCustomFieldController = new Elysia({ prefix: "/custom-f
           const row = await organizationCustomFieldService.create(tenant, {
             id: crypto.randomUUID(),
             ...body,
-          });
-          if (row === "forbidden") return error(403, "Réservé aux admin");
-          return row;
+          })
+          if (row === "forbidden") return error(403, "Réservé aux admin")
+          return row
         },
         {
           body: t.Object({
@@ -49,10 +48,10 @@ export const organizationCustomFieldController = new Elysia({ prefix: "/custom-f
       .patch(
         "/:id",
         async ({ tenant, params, body, error }) => {
-          const row = await organizationCustomFieldService.update(tenant, params.id, body);
-          if (row === "forbidden") return error(403, "Réservé aux admin");
-          if (row === null) return error(404, "Champ introuvable");
-          return row;
+          const row = await organizationCustomFieldService.update(tenant, params.id, body)
+          if (row === "forbidden") return error(403, "Réservé aux admin")
+          if (row === null) return error(404, "Champ introuvable")
+          return row
         },
         {
           params: t.Object({ id: t.String() }),
@@ -69,11 +68,11 @@ export const organizationCustomFieldController = new Elysia({ prefix: "/custom-f
       .delete(
         "/:id",
         async ({ tenant, params, error }) => {
-          const row = await organizationCustomFieldService.remove(tenant, params.id);
-          if (row === "forbidden") return error(403, "Réservé aux admin");
-          if (row === null) return error(404, "Champ introuvable");
-          return { success: true };
+          const row = await organizationCustomFieldService.remove(tenant, params.id)
+          if (row === "forbidden") return error(403, "Réservé aux admin")
+          if (row === null) return error(404, "Champ introuvable")
+          return { success: true }
         },
         { params: t.Object({ id: t.String() }) },
       ),
-  );
+  )

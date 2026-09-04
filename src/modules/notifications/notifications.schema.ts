@@ -1,6 +1,6 @@
-import { pgTable, text, timestamp, boolean, pgEnum, index } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { member, organization } from "../../shared/db/schema";
+import { relations } from "drizzle-orm"
+import { boolean, index, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { member, organization } from "../../shared/db/schema"
 
 export const notificationType = pgEnum("notification_type", [
   "new_reply",
@@ -9,7 +9,7 @@ export const notificationType = pgEnum("notification_type", [
   "campaign_limit_reached",
   "mention",
   "system",
-]);
+])
 
 export const notification = pgTable(
   "notification",
@@ -44,7 +44,7 @@ export const notification = pgTable(
     index("notification_recipient_createdAt_idx").on(table.recipientId, table.createdAt),
     index("notification_organizationId_idx").on(table.organizationId),
   ],
-);
+)
 
 export const notificationRelations = relations(notification, ({ one }) => ({
   organization: one(organization, {
@@ -55,4 +55,4 @@ export const notificationRelations = relations(notification, ({ one }) => ({
     fields: [notification.recipientId],
     references: [member.id],
   }),
-}));
+}))

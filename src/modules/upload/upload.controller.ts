@@ -1,6 +1,6 @@
-import { Elysia, t } from "elysia";
-import { tenantPlugin } from "../../shared/plugins/tenant";
-import { uploadService } from "./upload.service";
+import { Elysia, t } from "elysia"
+import { tenantPlugin } from "../../shared/plugins/tenant"
+import { uploadService } from "./upload.service"
 
 export const uploadController = new Elysia({ prefix: "/uploads" })
   .use(tenantPlugin)
@@ -9,8 +9,8 @@ export const uploadController = new Elysia({ prefix: "/uploads" })
   .post(
     "/template-image",
     async ({ tenant, body }) => {
-      const { fileName, contentType } = body;
-      return uploadService.generateUploadUrl(tenant, fileName, contentType);
+      const { fileName, contentType } = body
+      return uploadService.generateUploadUrl(tenant, fileName, contentType)
     },
     {
       body: t.Object({
@@ -23,20 +23,16 @@ export const uploadController = new Elysia({ prefix: "/uploads" })
   // Générer une URL de visualisation pour une image
   .post(
     "/view-image",
-    //@ts-ignore type mismatch
+    //@ts-expect-error type mismatch
     async ({ tenant, body, error }) => {
-      const { objectKey, expiresIn } = body;
+      const { objectKey, expiresIn } = body
       try {
-        return await uploadService.generateViewUrl(
-          tenant,
-          objectKey,
-          expiresIn,
-        );
+        return await uploadService.generateViewUrl(tenant, objectKey, expiresIn)
       } catch (err) {
         if (err instanceof Error && err.message.includes("Unauthorized")) {
-          return error(403, err.message);
+          return error(403, err.message)
         }
-        throw err;
+        throw err
       }
     },
     {
@@ -50,17 +46,17 @@ export const uploadController = new Elysia({ prefix: "/uploads" })
   // Supprimer une image
   .delete(
     "/image/:objectKey",
-    //@ts-ignore type mismatch
+    //@ts-expect-error type mismatch
     async ({ tenant, params, error }) => {
       try {
         // Décoder l'objectKey depuis l'URL
-        const objectKey = decodeURIComponent(params.objectKey);
-        return await uploadService.deleteImage(tenant, objectKey);
+        const objectKey = decodeURIComponent(params.objectKey)
+        return await uploadService.deleteImage(tenant, objectKey)
       } catch (err) {
         if (err instanceof Error && err.message.includes("Unauthorized")) {
-          return error(403, err.message);
+          return error(403, err.message)
         }
-        throw err;
+        throw err
       }
     },
     {
@@ -74,14 +70,10 @@ export const uploadController = new Elysia({ prefix: "/uploads" })
   .post(
     "/transform-html",
     async ({ tenant, body }) => {
-      const { htmlContent, expiresIn } = body;
+      const { htmlContent, expiresIn } = body
       return {
-        htmlContent: await uploadService.transformImageKeys(
-          tenant,
-          htmlContent,
-          expiresIn,
-        ),
-      };
+        htmlContent: await uploadService.transformImageKeys(tenant, htmlContent, expiresIn),
+      }
     },
     {
       body: t.Object({
@@ -89,4 +81,4 @@ export const uploadController = new Elysia({ prefix: "/uploads" })
         expiresIn: t.Optional(t.Number({ minimum: 60, maximum: 604800 })),
       }),
     },
-  );
+  )

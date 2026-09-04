@@ -1,17 +1,9 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  jsonb,
-  pgEnum,
-  index,
-  primaryKey,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { lead } from "../lead/lead.schema";
-import { member, organization } from "../../shared/db/schema/auth";
-import { campaign } from "../campaign/campaign.schema";
-import { template } from "../template/template.schema";
+import { relations } from "drizzle-orm"
+import { index, jsonb, pgEnum, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core"
+import { member, organization } from "../../shared/db/schema/auth"
+import { campaign } from "../campaign/campaign.schema"
+import { lead } from "../lead/lead.schema"
+import { template } from "../template/template.schema"
 
 export const emailEventType = pgEnum("email_event_type", [
   "sent",
@@ -21,7 +13,7 @@ export const emailEventType = pgEnum("email_event_type", [
   "bounced",
   "unsubscribed",
   "meeting_booked",
-]);
+])
 
 // ── Event log brut, source de vérité ─────────────────────────────
 export const emailEvent = pgTable(
@@ -31,10 +23,8 @@ export const emailEvent = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    mailId: text("campaign_id")
-      .references(() => campaign.id, { onDelete: "cascade" }),
-    leadId: text("lead_id")
-      .references(() => lead.id, { onDelete: "cascade" }),
+    mailId: text("campaign_id").references(() => campaign.id, { onDelete: "cascade" }),
+    leadId: text("lead_id").references(() => lead.id, { onDelete: "cascade" }),
     templateId: text("template_id").references(() => template.id, {
       onDelete: "set null",
     }),
@@ -55,9 +45,8 @@ export const emailEvent = pgTable(
     index("email_event_leadId_idx").on(table.leadId),
     index("email_event_memberId_idx").on(table.memberId),
   ],
-);
+)
 
- 
 export const emailEventRelations = relations(emailEvent, ({ one }) => ({
   organization: one(organization, {
     fields: [emailEvent.organizationId],
@@ -67,4 +56,4 @@ export const emailEventRelations = relations(emailEvent, ({ one }) => ({
   lead: one(lead, { fields: [emailEvent.leadId], references: [lead.id] }),
   template: one(template, { fields: [emailEvent.templateId], references: [template.id] }),
   member: one(member, { fields: [emailEvent.memberId], references: [member.id] }),
-}));
+}))

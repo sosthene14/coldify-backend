@@ -1,8 +1,8 @@
-import { pgTable, text, date, time, timestamp, pgEnum, index } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { lead } from "../lead/lead.schema";
-import { member, organization } from "../../shared/db/schema/auth";
-import { campaign } from "../campaign/campaign.schema";
+import { relations } from "drizzle-orm"
+import { date, index, pgEnum, pgTable, text, time, timestamp } from "drizzle-orm/pg-core"
+import { member, organization } from "../../shared/db/schema/auth"
+import { campaign } from "../campaign/campaign.schema"
+import { lead } from "../lead/lead.schema"
 
 export const calendarEventType = pgEnum("calendar_event_type", [
   "meeting",
@@ -11,7 +11,7 @@ export const calendarEventType = pgEnum("calendar_event_type", [
   "campaign_end",
   "warmup",
   "pause",
-]);
+])
 
 export const calendarEvent = pgTable(
   "calendar_event",
@@ -54,7 +54,7 @@ export const calendarEvent = pgTable(
     index("calendar_event_assigneeId_idx").on(table.assigneeId),
     index("calendar_event_campaignId_idx").on(table.mailId),
   ],
-);
+)
 
 export const calendarEventRelations = relations(calendarEvent, ({ one }) => ({
   organization: one(organization, {
@@ -74,4 +74,4 @@ export const calendarEventRelations = relations(calendarEvent, ({ one }) => ({
     fields: [calendarEvent.createdBy],
     references: [member.id],
   }),
-}));
+}))

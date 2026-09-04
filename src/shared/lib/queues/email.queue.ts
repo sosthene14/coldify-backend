@@ -1,12 +1,12 @@
 // src/lib/queues/email.queue.ts
-import { Queue } from "bullmq";
-import { redisConnection } from "../redis";
+import { Queue } from "bullmq"
+import { redisConnection } from "../redis"
 
 export type EmailJobData = {
-  to: string;
-  subject: string;
-  html: string;
-};
+  to: string
+  subject: string
+  html: string
+}
 
 export const emailQueue = new Queue<EmailJobData>("emails", {
   connection: redisConnection,
@@ -16,4 +16,4 @@ export const emailQueue = new Queue<EmailJobData>("emails", {
     removeOnComplete: true,
     removeOnFail: false,
   },
-});
+})

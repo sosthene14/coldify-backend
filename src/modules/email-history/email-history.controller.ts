@@ -1,6 +1,6 @@
-import { Elysia, t } from "elysia";
-import { emailHistoryService } from "./email-history.service";
-import { tenantPlugin } from "../../shared/plugins/tenant";
+import { Elysia, t } from "elysia"
+import { tenantPlugin } from "../../shared/plugins/tenant"
+import { emailHistoryService } from "./email-history.service"
 
 export const emailHistoryController = new Elysia({ prefix: "/email-history" })
   .use(tenantPlugin)
@@ -12,13 +12,13 @@ export const emailHistoryController = new Elysia({ prefix: "/email-history" })
     "/",
     async ({ tenant, query }) => {
       const result = await emailHistoryService.list(tenant.organizationId, {
-        limit: query.limit ? parseInt(query.limit) : 50,
-        offset: query.offset ? parseInt(query.offset) : 0,
+        limit: query.limit ? parseInt(query.limit, 10) : 50,
+        offset: query.offset ? parseInt(query.offset, 10) : 0,
         memberId: query.memberId,
         mailboxId: query.mailboxId,
-      });
+      })
 
-      return result;
+      return result
     },
     {
       query: t.Object({
@@ -27,91 +27,75 @@ export const emailHistoryController = new Elysia({ prefix: "/email-history" })
         memberId: t.Optional(t.String()),
         mailboxId: t.Optional(t.String()),
       }),
-    }
+    },
   )
 
   /**
    * Get email by ID
    */
   .get("/:id", async ({ params, tenant }) => {
-    const email = await emailHistoryService.getById(
-      params.id,
-      tenant.organizationId
-    );
+    const email = await emailHistoryService.getById(params.id, tenant.organizationId)
 
     if (!email) {
       return {
         error: "Email not found",
         status: 404,
-      };
+      }
     }
 
-    return email;
+    return email
   })
 
   /**
    * Get statistics
    */
   .get("/stats/summary", async ({ tenant }) => {
-    const stats = await emailHistoryService.getStats(tenant.organizationId);
-    return stats;
+    const stats = await emailHistoryService.getStats(tenant.organizationId)
+    return stats
   })
 
   /**
    * Delete email history
    */
   .delete("/:id", async ({ params, tenant }) => {
-    const email = await emailHistoryService.getById(
-      params.id,
-      tenant.organizationId
-    );
+    const email = await emailHistoryService.getById(params.id, tenant.organizationId)
 
     if (!email) {
       return {
         success: false,
         error: "Email not found",
-      };
+      }
     }
 
-    const deleted = await emailHistoryService.delete(
-      params.id,
-      tenant.organizationId
-    );
+    const deleted = await emailHistoryService.delete(params.id, tenant.organizationId)
 
     if (!deleted) {
       return {
         success: false,
         error: "Failed to delete email",
-      };
+      }
     }
 
     return {
       success: true,
       message: "Email deleted successfully",
-    };
+    }
   })
 
   .get("/:id/content", async ({ params, tenant, set }) => {
-    const email = await emailHistoryService.getById(
-      params.id,
-      tenant.organizationId
-    );
+    const email = await emailHistoryService.getById(params.id, tenant.organizationId)
 
     if (!email) {
-      set.status = 404;
-      return { error: "Email not found" };
+      set.status = 404
+      return { error: "Email not found" }
     }
 
     try {
-      const htmlContent = await emailHistoryService.fetchContentOnDemand(
-        email,
-        tenant.organizationId
-      );
+      const htmlContent = await emailHistoryService.fetchContentOnDemand(email, tenant.organizationId)
 
-      return { htmlContent };
-    } catch (err) {
-      set.status = 502;
-      return { error: "Failed to fetch email content" };
+      return { htmlContent }
+    } catch (_err) {
+      set.status = 502
+      return { error: "Failed to fetch email content" }
     }
-  });
-
+  })

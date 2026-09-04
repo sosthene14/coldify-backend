@@ -1,28 +1,12 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  boolean,
-  integer,
-  pgEnum,
-  uniqueIndex,
-  index,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations } from "drizzle-orm"
+import { boolean, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { member, organization } from "../../shared/db/schema/auth"
+import { campaign } from "../campaign/campaign.schema"
+import { lead } from "../lead/lead.schema"
 
-import { lead } from "../lead/lead.schema";
-import { member, organization } from "../../shared/db/schema/auth";
-import { campaign } from "../campaign/campaign.schema";
+export const sentiment = pgEnum("sentiment", ["interested", "not_interested", "question", "auto_reply", "ooo"])
 
-export const sentiment = pgEnum("sentiment", [
-  "interested",
-  "not_interested",
-  "question",
-  "auto_reply",
-  "ooo",
-]);
-
-export const messageSender = pgEnum("message_sender", ["member", "lead", "system"]);
+export const messageSender = pgEnum("message_sender", ["member", "lead", "system"])
 
 // ── Conversation: le fil, avec un snapshot du dernier message ────
 // (comme campaign_daily_stat: table "rollup" mise à jour à chaque insert
@@ -70,7 +54,7 @@ export const conversation = pgTable(
     // pour les filtres sidebar (Unread / Needs Reply / Replied)
     index("conversation_org_unread_idx").on(table.organizationId, table.unread),
   ],
-);
+)
 
 // ── Message: chaque email individuel du thread, source de vérité ─
 export const message = pgTable(
@@ -101,7 +85,7 @@ export const message = pgTable(
     index("message_conversationId_idx").on(table.conversationId),
     index("message_organizationId_idx").on(table.organizationId),
   ],
-);
+)
 
 export const conversationRelations = relations(conversation, ({ one, many }) => ({
   organization: one(organization, {
@@ -115,7 +99,7 @@ export const conversationRelations = relations(conversation, ({ one, many }) => 
   }),
   owner: one(member, { fields: [conversation.ownerId], references: [member.id] }),
   messages: many(message),
-}));
+}))
 
 export const messageRelations = relations(message, ({ one }) => ({
   conversation: one(conversation, {
@@ -126,4 +110,4 @@ export const messageRelations = relations(message, ({ one }) => ({
     fields: [message.senderMemberId],
     references: [member.id],
   }),
-}));
+}))

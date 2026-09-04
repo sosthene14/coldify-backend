@@ -1,19 +1,10 @@
-import { relations } from "drizzle-orm";
-import {
-  pgTable,
-  text,
-  timestamp,
-  boolean,
-  integer,
-  index,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
-import { folder } from "../../../modules/folder/folder.schema";
-import { lead } from "../../../modules/lead/lead.schema";
-import { conversation } from "../../../modules/conversation/conversation.schema";
-import { calendarEvent } from "../../../modules/calendar-event/calendar-event.schema";
-import { campaign } from "../../../modules/campaign/campaign.schema";
-
+import { relations } from "drizzle-orm"
+import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { calendarEvent } from "../../../modules/calendar-event/calendar-event.schema"
+import { campaign } from "../../../modules/campaign/campaign.schema"
+import { conversation } from "../../../modules/conversation/conversation.schema"
+import { folder } from "../../../modules/folder/folder.schema"
+import { lead } from "../../../modules/lead/lead.schema"
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -25,6 +16,7 @@ export const user = pgTable("user", {
   timezone: text("timezone"),
   language: text("language").default("English"),
   notificationPreferences: text("notification_preferences"), // JSON string pour les préférences
+  pushSubscription: text("push_subscription"), // JSON string pour la push subscription
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
@@ -34,7 +26,7 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-});
+})
 
 export const session = pgTable(
   "session",
@@ -54,7 +46,7 @@ export const session = pgTable(
     activeOrganizationId: text("active_organization_id"),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
-);
+)
 
 export const account = pgTable(
   "account",
@@ -78,7 +70,7 @@ export const account = pgTable(
       .notNull(),
   },
   (table) => [index("account_userId_idx").on(table.userId)],
-);
+)
 
 export const verification = pgTable(
   "verification",
@@ -94,7 +86,7 @@ export const verification = pgTable(
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
-);
+)
 
 export const organization = pgTable(
   "organization",
@@ -107,7 +99,7 @@ export const organization = pgTable(
     metadata: text("metadata"),
   },
   (table) => [uniqueIndex("organization_slug_uidx").on(table.slug)],
-);
+)
 
 export const member = pgTable(
   "member",
@@ -122,11 +114,8 @@ export const member = pgTable(
     role: text("role").default("member").notNull(),
     createdAt: timestamp("created_at").notNull(),
   },
-  (table) => [
-    index("member_organizationId_idx").on(table.organizationId),
-    index("member_userId_idx").on(table.userId),
-  ],
-);
+  (table) => [index("member_organizationId_idx").on(table.organizationId), index("member_userId_idx").on(table.userId)],
+)
 
 export const invitation = pgTable(
   "invitation",
@@ -148,7 +137,7 @@ export const invitation = pgTable(
     index("invitation_organizationId_idx").on(table.organizationId),
     index("invitation_email_idx").on(table.email),
   ],
-);
+)
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
@@ -156,23 +145,22 @@ export const userRelations = relations(user, ({ many }) => ({
   createdFolders: many(folder),
   members: many(member),
   invitations: many(invitation),
-}));
+}))
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, {
     fields: [session.userId],
     references: [user.id],
   }),
-}));
+}))
 
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
     references: [user.id],
   }),
-}));
+}))
 
- 
 export const organizationRelations = relations(organization, ({ many }) => ({
   members: many(member),
   invitations: many(invitation),
@@ -181,11 +169,9 @@ export const organizationRelations = relations(organization, ({ many }) => ({
   leads: many(lead),
   campaigns: many(campaign),
   folders: many(folder),
-}));
+}))
 
- 
-
-export const memberRelations = relations(member, ({ one,many }) => ({
+export const memberRelations = relations(member, ({ one, many }) => ({
   organization: one(organization, {
     fields: [member.organizationId],
     references: [organization.id],
@@ -198,7 +184,7 @@ export const memberRelations = relations(member, ({ one,many }) => ({
     fields: [member.userId],
     references: [user.id],
   }),
-}));
+}))
 
 export const invitationRelations = relations(invitation, ({ one }) => ({
   organization: one(organization, {
@@ -209,7 +195,7 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
     fields: [invitation.inviterId],
     references: [user.id],
   }),
-}));
+}))
 
 export const twoFactor = pgTable(
   "two_factor",
@@ -224,8 +210,5 @@ export const twoFactor = pgTable(
     failedVerificationCount: integer("failed_verification_count").default(0),
     lockedUntil: timestamp("locked_until"),
   },
-  (table) => [
-    index("two_factor_secret_idx").on(table.secret),
-    index("two_factor_userId_idx").on(table.userId),
-  ]
-);
+  (table) => [index("two_factor_secret_idx").on(table.secret), index("two_factor_userId_idx").on(table.userId)],
+)

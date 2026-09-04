@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2021",
     "module": "NodeNext",
-"moduleResolution": "NodeNext",
+    "moduleResolution": "NodeNext",
 
     "paths": {
       "@modules/*": ["./modules/*"],

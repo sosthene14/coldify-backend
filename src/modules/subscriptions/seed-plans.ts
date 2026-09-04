@@ -1,10 +1,10 @@
-import { db } from "../../shared";
-import { plans } from "./subscription.schema";
+import { db } from "../../shared"
+import { plans } from "./subscription.schema"
 
 // Price ID Paddle à remplacer par ceux générés dans ton dashboard sandbox
 // (Developer Tools > products-v2 > copier le pri_xxx de chaque prix mensuel)
-const PADDLE_PRICE_ID_PRO = "pri_01m175bj5j63tve069m5a03yph";
-const PADDLE_PRICE_ID_UNLIMITED = "pri_01m1758cr788r8tnjtvc69fe2v";
+const PADDLE_PRICE_ID_PRO = "pri_01m175bj5j63tve069m5a03yph"
+const PADDLE_PRICE_ID_UNLIMITED = "pri_01m1758cr788r8tnjtvc69fe2v"
 
 export async function seedPlans() {
   await db
@@ -57,9 +57,9 @@ export async function seedPlans() {
         priceCents: plans.priceCents,
         updatedAt: new Date(),
       },
-    });
+    })
 
-  console.log("✅ Plans seedés : free, pro, unlimited");
+  console.log("✅ Plans seedés : free, pro, unlimited")
 }
 
 // Exécution directe : `tsx scripts/seed-plans.ts` ou équivalent selon ton setup
@@ -67,7 +67,7 @@ if (require.main === module) {
   seedPlans()
     .then(() => process.exit(0))
     .catch((err) => {
-      console.error("❌ Erreur seed plans :", err);
-      process.exit(1);
-    });
+      console.error("❌ Erreur seed plans :", err)
+      process.exit(1)
+    })
 }

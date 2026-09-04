@@ -1,3 +1,3 @@
-export { leadController } from './lead.controller';
-export { leadService } from './lead.service';
-export * from './lead.schema';
+export { leadController } from "./lead.controller"
+export * from "./lead.schema"
+export { leadService } from "./lead.service"

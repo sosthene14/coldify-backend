@@ -1,19 +1,8 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  boolean,
-  integer,
-  jsonb,
-  pgEnum,
-  uniqueIndex,
-  index,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { member, organization } from "../../shared/db/schema";
+import { relations } from "drizzle-orm"
+import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
+import { member, organization } from "../../shared/db/schema"
 
-
-export const customFieldType = pgEnum("custom_field_type", ["text", "date", "select"]);
+export const customFieldType = pgEnum("custom_field_type", ["text", "date", "select"])
 
 export const organizationCustomField = pgTable(
   "organization_custom_field",
@@ -46,18 +35,15 @@ export const organizationCustomField = pgTable(
     uniqueIndex("org_custom_field_org_name_uidx").on(table.organizationId, table.name),
     index("org_custom_field_organizationId_idx").on(table.organizationId),
   ],
-);
+)
 
-export const organizationCustomFieldRelations = relations(
-  organizationCustomField,
-  ({ one }) => ({
-    organization: one(organization, {
-      fields: [organizationCustomField.organizationId],
-      references: [organization.id],
-    }),
-    creator: one(member, {
-      fields: [organizationCustomField.createdBy],
-      references: [member.id],
-    }),
+export const organizationCustomFieldRelations = relations(organizationCustomField, ({ one }) => ({
+  organization: one(organization, {
+    fields: [organizationCustomField.organizationId],
+    references: [organization.id],
   }),
-);
+  creator: one(member, {
+    fields: [organizationCustomField.createdBy],
+    references: [member.id],
+  }),
+}))

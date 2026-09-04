@@ -1,7 +1,6 @@
-import { Elysia, t } from "elysia";
-import { requireRole, tenantPlugin } from "../../shared";
-import { calendarEventService } from "./calendar-event.service";
-
+import { Elysia, t } from "elysia"
+import { requireRole, tenantPlugin } from "../../shared"
+import { calendarEventService } from "./calendar-event.service"
 
 const typeSchema = t.Union([
   t.Literal("meeting"),
@@ -10,28 +9,24 @@ const typeSchema = t.Union([
   t.Literal("campaign_end"),
   t.Literal("warmup"),
   t.Literal("pause"),
-]);
+])
 
 export const calendarEventController = new Elysia({ prefix: "/calendar-events" })
   .use(tenantPlugin)
 
-  .get(
-    "/",
-    async ({ tenant, query }) => calendarEventService.list(tenant, query.from, query.to),
-    {
-      query: t.Object({
-        from: t.Optional(t.String()), // "YYYY-MM-DD"
-        to: t.Optional(t.String()),
-      }),
-    },
-  )
+  .get("/", async ({ tenant, query }) => calendarEventService.list(tenant, query.from, query.to), {
+    query: t.Object({
+      from: t.Optional(t.String()), // "YYYY-MM-DD"
+      to: t.Optional(t.String()),
+    }),
+  })
 
   .get(
     "/:id",
     async ({ tenant, params, status }) => {
-      const row = await calendarEventService.getById(tenant, params.id);
-      if (!row) return status(404, "Event introuvable");
-      return row;
+      const row = await calendarEventService.getById(tenant, params.id)
+      if (!row) return status(404, "Event introuvable")
+      return row
     },
     { params: t.Object({ id: t.String() }) },
   )
@@ -43,7 +38,7 @@ export const calendarEventController = new Elysia({ prefix: "/calendar-events" }
       .post(
         "/",
         async ({ tenant, body }) => {
-          return calendarEventService.create(tenant, { id: crypto.randomUUID(), ...body });
+          return calendarEventService.create(tenant, { id: crypto.randomUUID(), ...body })
         },
         {
           body: t.Object({
@@ -62,11 +57,10 @@ export const calendarEventController = new Elysia({ prefix: "/calendar-events" }
       .patch(
         "/:id",
         async ({ tenant, params, body, error }) => {
-          const row = await calendarEventService.update(tenant, params.id, body);
-          if (row === null) return error(404, "Event introuvable");
-          if (row === "forbidden")
-            return error(403, "Seul le créateur, l'assigné ou un admin peut modifier cet event");
-          return row;
+          const row = await calendarEventService.update(tenant, params.id, body)
+          if (row === null) return error(404, "Event introuvable")
+          if (row === "forbidden") return error(403, "Seul le créateur, l'assigné ou un admin peut modifier cet event")
+          return row
         },
         {
           params: t.Object({ id: t.String() }),
@@ -84,12 +78,11 @@ export const calendarEventController = new Elysia({ prefix: "/calendar-events" }
       .delete(
         "/:id",
         async ({ tenant, params, error }) => {
-          const row = await calendarEventService.remove(tenant, params.id);
-          if (row === null) return error(404, "Event introuvable");
-          if (row === "forbidden")
-            return error(403, "Seul le créateur, l'assigné ou un admin peut supprimer cet event");
-          return { success: true };
+          const row = await calendarEventService.remove(tenant, params.id)
+          if (row === null) return error(404, "Event introuvable")
+          if (row === "forbidden") return error(403, "Seul le créateur, l'assigné ou un admin peut supprimer cet event")
+          return { success: true }
         },
         { params: t.Object({ id: t.String() }) },
       ),
-  );
+  )

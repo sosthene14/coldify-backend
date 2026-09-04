@@ -1,3 +1,3 @@
-export { campaignController } from './campaign.controller';
-export { campaignService } from './campaign.service';
-export * from './campaign.schema';
+export { campaignController } from "./campaign.controller"
+export * from "./campaign.schema"
+export { campaignService } from "./campaign.service"

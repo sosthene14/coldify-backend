@@ -1,16 +1,8 @@
-import { relations } from "drizzle-orm";
-import {
-  pgTable,
-  text,
-  timestamp,
-  integer,
-  boolean,
-  index,
-  json,
-} from "drizzle-orm/pg-core";
-import { member, organization } from "../../shared/db/schema/auth";
-import { mailbox } from "../mailbox/mailbox.schema";
-import { template } from "../template/template.schema";
+import { relations } from "drizzle-orm"
+import { boolean, index, integer, json, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { member, organization } from "../../shared/db/schema/auth"
+import { mailbox } from "../mailbox/mailbox.schema"
+import { template } from "../template/template.schema"
 
 export const emailHistory = pgTable(
   "email_history",
@@ -25,8 +17,7 @@ export const emailHistory = pgTable(
     mailboxId: text("mailbox_id")
       .notNull()
       .references(() => mailbox.id, { onDelete: "cascade" }),
-    templateId: text("template_id")
-      .references(() => template.id, { onDelete: "set null" }),
+    templateId: text("template_id").references(() => template.id, { onDelete: "set null" }),
 
     // Email details
     from: text("from").notNull(),
@@ -35,7 +26,7 @@ export const emailHistory = pgTable(
     bcc: json("bcc").$type<string[]>(),
     subject: text("subject").notNull(),
     snippet: text("snippet").notNull(),
-    
+
     // Attachments info (just metadata, not actual files)
     hasAttachments: boolean("has_attachments").default(false).notNull(),
     attachmentCount: integer("attachment_count").default(0).notNull(),
@@ -69,8 +60,8 @@ export const emailHistory = pgTable(
     index("email_history_mailboxId_idx").on(table.mailboxId),
     index("email_history_templateId_idx").on(table.templateId),
     index("email_history_sentAt_idx").on(table.sentAt),
-  ]
-);
+  ],
+)
 
 export const emailHistoryRelations = relations(emailHistory, ({ one }) => ({
   organization: one(organization, {
@@ -89,7 +80,7 @@ export const emailHistoryRelations = relations(emailHistory, ({ one }) => ({
     fields: [emailHistory.templateId],
     references: [template.id],
   }),
-}));
+}))
 
-export type EmailHistory = typeof emailHistory.$inferSelect;
-export type InsertEmailHistory = typeof emailHistory.$inferInsert;
+export type EmailHistory = typeof emailHistory.$inferSelect
+export type InsertEmailHistory = typeof emailHistory.$inferInsert

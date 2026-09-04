@@ -1,7 +1,7 @@
-const template = () => {
-    return `
+const _template = () => {
+  return `
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -40,29 +40,27 @@ const template = () => {
 
         <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="width:600px; max-width:600px; background-color:#ffffff; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
 
-          <!-- Header / Logo -->
+          <!-- En-tête / Logo -->
           <tr>
             <td class="email-padding" style="padding: 32px 40px 24px 40px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td>
-                    <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 600; color: #1c1c1e; letter-spacing: -0.2px;">
-                      So-mails
-                    </span>
+                  <td align="center">
+                    <img src="https://so-mails.com/logo.png" alt="So-mails" width="120" style="display:block; max-width:120px; height:auto;" />
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <!-- Divider -->
+          <!-- Séparateur -->
           <tr>
             <td>
               <div style="height:1px; background-color:#e5e7eb; margin: 0 40px;"></div>
             </td>
           </tr>
 
-          <!-- Body -->
+          <!-- Corps -->
           <tr>
             <td class="email-padding" style="padding: 32px 40px 8px 40px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -77,7 +75,7 @@ const template = () => {
                       {{body_text}}
                     </p>
 
-                    <!-- CTA Button -->
+                    <!-- Bouton CTA -->
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" style="border-radius: 6px; background-color: #1c7ed6;">
@@ -90,7 +88,7 @@ const template = () => {
                     </table>
 
                     <p style="margin: 24px 0 0 0; font-size: 12px; line-height: 18px; color: #a1a1aa;">
-                      Or copy and paste this link into your browser:<br />
+                      Ou copiez-collez ce lien dans votre navigateur :<br />
                       <a href="{{cta_url}}" style="color: #1c7ed6; text-decoration: none; word-break: break-all;">{{cta_url}}</a>
                     </p>
 
@@ -100,7 +98,7 @@ const template = () => {
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- Pied de page -->
           <tr>
             <td style="padding: 24px 40px 32px 40px;">
               <div style="height:1px; background-color:#e5e7eb; margin: 0 0 24px 0;"></div>
@@ -108,10 +106,10 @@ const template = () => {
                 <tr>
                   <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
                     <p style="margin: 0; font-size: 12px; line-height: 18px; color: #a1a1aa;">
-                      This email was sent to {{recipient_email}}. If you didn't request this, you can safely ignore it.
+                      Cet email a été envoyé à {{recipient_email}}. Si vous n'êtes pas à l'origine de cette demande, vous pouvez l'ignorer en toute sécurité.
                     </p>
                     <p style="margin: 8px 0 0 0; font-size: 12px; line-height: 18px; color: #a1a1aa;">
-                      © {{year}} So-mails. All rights reserved.
+                      © {{year}} So-mails. Tous droits réservés.
                     </p>
                   </td>
                 </tr>

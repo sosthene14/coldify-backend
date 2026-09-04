@@ -1,14 +1,8 @@
-import { pgTable, text, timestamp, pgEnum, index, boolean } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { calendarEvent, conversation, leadCampaignStatus, member, organization } from "../../shared/db/schema";
+import { relations } from "drizzle-orm"
+import { boolean, index, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { calendarEvent, conversation, leadCampaignStatus, member, organization } from "../../shared/db/schema"
 
-
-export const campaignStatus = pgEnum("campaign_status", [
-  "active",
-  "draft",
-  "completed",
-  "archived",
-]);
+export const campaignStatus = pgEnum("campaign_status", ["active", "draft", "completed", "archived"])
 
 export const campaign = pgTable(
   "campaign",
@@ -36,9 +30,9 @@ export const campaign = pgTable(
     index("campaign_organizationId_idx").on(table.organizationId),
     index("campaign_createdBy_idx").on(table.createdBy),
   ],
-);
+)
 
-export const campaignRelations = relations(campaign, ({ one,many }) => ({
+export const campaignRelations = relations(campaign, ({ one, many }) => ({
   organization: one(organization, {
     fields: [campaign.organizationId],
     references: [organization.id],
@@ -50,4 +44,4 @@ export const campaignRelations = relations(campaign, ({ one,many }) => ({
     fields: [campaign.createdBy],
     references: [member.id],
   }),
-}));
+}))

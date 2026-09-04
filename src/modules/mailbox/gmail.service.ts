@@ -1,35 +1,31 @@
-import { google } from "googleapis";
-import type { OAuth2Client } from "google-auth-library";
+import type { OAuth2Client } from "google-auth-library"
+import { google } from "googleapis"
 
-const gmail = google.gmail("v1");
+const gmail = google.gmail("v1")
 
 interface GmailConfig {
-  clientId: string;
-  clientSecret: string;
-  redirectUri: string;
+  clientId: string
+  clientSecret: string
+  redirectUri: string
 }
 
 interface SendEmailParams {
-  to: string;
-  from: string;
-  subject: string;
-  html: string;
-  text?: string;
-  replyTo?: string;
-  cc?: string;
-  bcc?: string;
+  to: string
+  from: string
+  subject: string
+  html: string
+  text?: string
+  replyTo?: string
+  cc?: string
+  bcc?: string
 }
 
 export class GmailService {
-  private oauth2Client: OAuth2Client;
+  private oauth2Client: OAuth2Client
 
   constructor(config: GmailConfig) {
-    //@ts-ignore type mismatch
-    this.oauth2Client = new google.auth.OAuth2(
-      config.clientId,
-      config.clientSecret,
-      config.redirectUri
-    );
+    //@ts-expect-error type mismatch
+    this.oauth2Client = new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri)
   }
 
   /**
@@ -47,71 +43,67 @@ export class GmailService {
       ],
       state,
       prompt: "select_account consent", // Force account selection AND consent
-    });
+    })
   }
 
   /**
    * Exchange authorization code for tokens
    */
   async getTokensFromCode(code: string): Promise<{
-    accessToken: string;
-    refreshToken: string;
-    expiresAt: Date;
-    email: string;
+    accessToken: string
+    refreshToken: string
+    expiresAt: Date
+    email: string
   }> {
-    const { tokens } = await this.oauth2Client.getToken(code);
+    const { tokens } = await this.oauth2Client.getToken(code)
 
     if (!tokens.access_token || !tokens.refresh_token) {
-      throw new Error("Failed to get tokens from Gmail");
+      throw new Error("Failed to get tokens from Gmail")
     }
 
     // Get user email
-    this.oauth2Client.setCredentials(tokens);
-    //@ts-ignore type mismatch
-    const oauth2 = google.oauth2({ version: "v2", auth: this.oauth2Client });
-    const { data } = await oauth2.userinfo.get();
+    this.oauth2Client.setCredentials(tokens)
+    //@ts-expect-error type mismatch
+    const oauth2 = google.oauth2({ version: "v2", auth: this.oauth2Client })
+    const { data } = await oauth2.userinfo.get()
 
     if (!data.email) {
-      throw new Error("Failed to get user email from Gmail");
+      throw new Error("Failed to get user email from Gmail")
     }
 
-    const expiresAt = tokens.expiry_date
-      ? new Date(tokens.expiry_date)
-      : new Date(Date.now() + 3600 * 1000); // Default 1 hour
+    const expiresAt = tokens.expiry_date ? new Date(tokens.expiry_date) : new Date(Date.now() + 3600 * 1000) // Default 1 hour
 
     return {
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token,
       expiresAt,
       email: data.email,
-    };
+    }
   }
 
   /**
    * Refresh access token using refresh token
    */
   async refreshAccessToken(refreshToken: string): Promise<{
-    accessToken: string;
-    expiresAt: Date;
+    accessToken: string
+    expiresAt: Date
   }> {
     this.oauth2Client.setCredentials({
       refresh_token: refreshToken,
-    });
+    })
 
-    const { credentials } = await this.oauth2Client.refreshAccessToken();
+    const { credentials } = await this.oauth2Client.refreshAccessToken()
 
     if (!credentials.access_token) {
-      throw new Error("Failed to refresh access token");
+      throw new Error("Failed to refresh access token")
     }
 
-    const expiresAt = credentials.expiry_date
-      ? new Date(credentials.expiry_date)
-      : new Date(Date.now() + 3600 * 1000);
+    const expiresAt = credentials.expiry_date ? new Date(credentials.expiry_date) : new Date(Date.now() + 3600 * 1000)
 
     return {
       accessToken: credentials.access_token,
       expiresAt,
-    };
+    }
   }
 
   /**
@@ -120,12 +112,12 @@ export class GmailService {
   async sendEmail(
     accessToken: string,
     refreshToken: string | null,
-    params: SendEmailParams
+    params: SendEmailParams,
   ): Promise<{ messageId: string }> {
     return this.sendEmailWithAttachments(accessToken, refreshToken, {
       ...params,
       attachments: [],
-    });
+    })
   }
 
   /**
@@ -136,143 +128,130 @@ export class GmailService {
     refreshToken: string | null,
     params: SendEmailParams & {
       attachments?: Array<{
-        filename: string;
-        mimeType: string;
-        content: Buffer;
-      }>;
-    }
+        filename: string
+        mimeType: string
+        content: Buffer
+      }>
+    },
   ): Promise<{ messageId: string }> {
     // Set credentials
     this.oauth2Client.setCredentials({
       access_token: accessToken,
       refresh_token: refreshToken || undefined,
-    });
+    })
 
     // Check if token is expired and refresh if needed
-    const tokenInfo = await this.oauth2Client.getAccessToken();
+    const tokenInfo = await this.oauth2Client.getAccessToken()
     if (!tokenInfo.token) {
-      throw new Error("Failed to get valid access token");
+      throw new Error("Failed to get valid access token")
     }
 
     // Create email message
-    const boundary = `boundary_${Date.now()}_${Math.random().toString(36)}`;
-    
+    const boundary = `boundary_${Date.now()}_${Math.random().toString(36)}`
+
     // Encode subject in UTF-8 (RFC 2047)
-    const encodedSubject = `=?UTF-8?B?${Buffer.from(params.subject).toString('base64')}?=`;
-    
-    const messageParts = [
-      `From: ${params.from}`,
-      `To: ${params.to}`,
-      `Subject: ${encodedSubject}`,
-    ];
+    const encodedSubject = `=?UTF-8?B?${Buffer.from(params.subject).toString("base64")}?=`
+
+    const messageParts = [`From: ${params.from}`, `To: ${params.to}`, `Subject: ${encodedSubject}`]
 
     if (params.replyTo) {
-      messageParts.push(`Reply-To: ${params.replyTo}`);
+      messageParts.push(`Reply-To: ${params.replyTo}`)
     }
 
     if (params.cc) {
-      messageParts.push(`Cc: ${params.cc}`);
+      messageParts.push(`Cc: ${params.cc}`)
     }
 
     if (params.bcc) {
-      messageParts.push(`Bcc: ${params.bcc}`);
+      messageParts.push(`Bcc: ${params.bcc}`)
     }
 
-    messageParts.push("MIME-Version: 1.0");
-    messageParts.push(
-      `Content-Type: multipart/mixed; boundary="${boundary}"`
-    );
-    messageParts.push("");
-    messageParts.push(`--${boundary}`);
-    messageParts.push('Content-Type: multipart/alternative; boundary="alt_boundary"');
-    messageParts.push("");
-    messageParts.push("--alt_boundary");
-    messageParts.push("Content-Type: text/plain; charset=UTF-8");
-    messageParts.push("");
-    messageParts.push(params.text || this.htmlToText(params.html));
-    messageParts.push("");
-    messageParts.push("--alt_boundary");
-    messageParts.push("Content-Type: text/html; charset=UTF-8");
-    messageParts.push("");
-    messageParts.push(params.html);
-    messageParts.push("");
-    messageParts.push("--alt_boundary--");
+    messageParts.push("MIME-Version: 1.0")
+    messageParts.push(`Content-Type: multipart/mixed; boundary="${boundary}"`)
+    messageParts.push("")
+    messageParts.push(`--${boundary}`)
+    messageParts.push('Content-Type: multipart/alternative; boundary="alt_boundary"')
+    messageParts.push("")
+    messageParts.push("--alt_boundary")
+    messageParts.push("Content-Type: text/plain; charset=UTF-8")
+    messageParts.push("")
+    messageParts.push(params.text || this.htmlToText(params.html))
+    messageParts.push("")
+    messageParts.push("--alt_boundary")
+    messageParts.push("Content-Type: text/html; charset=UTF-8")
+    messageParts.push("")
+    messageParts.push(params.html)
+    messageParts.push("")
+    messageParts.push("--alt_boundary--")
 
     // Add attachments
     if (params.attachments && params.attachments.length > 0) {
       for (const attachment of params.attachments) {
-        messageParts.push(`--${boundary}`);
-        messageParts.push(
-          `Content-Type: ${attachment.mimeType}; name="${attachment.filename}"`
-        );
-        messageParts.push("Content-Transfer-Encoding: base64");
-        messageParts.push(
-          `Content-Disposition: attachment; filename="${attachment.filename}"`
-        );
-        messageParts.push("");
-        messageParts.push(attachment.content.toString("base64"));
+        messageParts.push(`--${boundary}`)
+        messageParts.push(`Content-Type: ${attachment.mimeType}; name="${attachment.filename}"`)
+        messageParts.push("Content-Transfer-Encoding: base64")
+        messageParts.push(`Content-Disposition: attachment; filename="${attachment.filename}"`)
+        messageParts.push("")
+        messageParts.push(attachment.content.toString("base64"))
       }
     }
 
-    messageParts.push(`--${boundary}--`);
+    messageParts.push(`--${boundary}--`)
 
-    const message = messageParts.join("\r\n");
+    const message = messageParts.join("\r\n")
 
     // Encode message in base64url
     const encodedMessage = Buffer.from(message)
       .toString("base64")
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
-      .replace(/=+$/, "");
+      .replace(/=+$/, "")
 
     // Send via Gmail API
-    
+
     const response = await gmail.users.messages.send({
-      //@ts-ignore type mismatch
+      //@ts-expect-error type mismatch
       auth: this.oauth2Client,
       userId: "me",
       requestBody: {
         raw: encodedMessage,
       },
-    });
+    })
 
-    //@ts-ignore type mismatch
+    //@ts-expect-error type mismatch
     if (!response.data.id) {
-      throw new Error("Failed to send email via Gmail");
+      throw new Error("Failed to send email via Gmail")
     }
 
     return {
-      //@ts-ignore type mismatch
+      //@ts-expect-error type mismatch
       messageId: response.data.id,
-    };
+    }
   }
 
   /**
    * Verify mailbox connection
    */
-  async verifyConnection(
-    accessToken: string,
-    refreshToken: string | null
-  ): Promise<{ email: string; valid: boolean }> {
+  async verifyConnection(accessToken: string, refreshToken: string | null): Promise<{ email: string; valid: boolean }> {
     try {
       this.oauth2Client.setCredentials({
         access_token: accessToken,
         refresh_token: refreshToken || undefined,
-      });
+      })
 
-      //@ts-ignore type mismatch
-      const oauth2 = google.oauth2({ version: "v2", auth: this.oauth2Client });
-      const { data } = await oauth2.userinfo.get();
+      //@ts-expect-error type mismatch
+      const oauth2 = google.oauth2({ version: "v2", auth: this.oauth2Client })
+      const { data } = await oauth2.userinfo.get()
 
       return {
         email: data.email || "",
         valid: !!data.email,
-      };
-    } catch (error) {
+      }
+    } catch (_error) {
       return {
         email: "",
         valid: false,
-      };
+      }
     }
   }
 
@@ -285,29 +264,29 @@ export class GmailService {
       .replace(/<script[^>]*>.*?<\/script>/gi, "")
       .replace(/<[^>]+>/g, "")
       .replace(/\s+/g, " ")
-      .trim();
+      .trim()
   }
 }
 
 // Singleton instance
-let gmailServiceInstance: GmailService | null = null;
+let gmailServiceInstance: GmailService | null = null
 
 export function getGmailService(): GmailService {
   if (!gmailServiceInstance) {
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = `${process.env.BETTER_AUTH_URL}/mailboxes/gmail/callback`;
+    const clientId = process.env.GOOGLE_CLIENT_ID
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+    const redirectUri = `${process.env.BETTER_AUTH_URL}/mailboxes/gmail/callback`
 
     if (!clientId || !clientSecret) {
-      throw new Error("Gmail OAuth credentials not configured");
+      throw new Error("Gmail OAuth credentials not configured")
     }
 
     gmailServiceInstance = new GmailService({
       clientId,
       clientSecret,
       redirectUri,
-    });
+    })
   }
 
-  return gmailServiceInstance;
+  return gmailServiceInstance
 }

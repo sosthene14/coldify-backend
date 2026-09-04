@@ -1,35 +1,30 @@
-import { eq, and, or, desc, sql } from "drizzle-orm";
-import type { TenantContext } from "../../shared/plugins/tenant";
-import { conversation, message, messageSender, sentiment } from "./conversation.schema";
-import { lead } from "../lead/lead.schema";
-import { db } from "../../shared";
-import { member } from "../../shared/db/schema";
-import { campaign } from "../campaign";
+import { and, desc, eq, sql } from "drizzle-orm"
+import { db } from "../../shared"
+import { member } from "../../shared/db/schema"
+import type { TenantContext } from "../../shared/plugins/tenant"
+import { campaign } from "../campaign"
+import { lead } from "../lead/lead.schema"
+import { conversation, message, type messageSender, type sentiment } from "./conversation.schema"
 
-type Sentiment = (typeof sentiment.enumValues)[number];
-type SenderType = (typeof messageSender.enumValues)[number];
-export type InboxFilter = "all" | "unread" | "needs_reply" | "replied";
+type Sentiment = (typeof sentiment.enumValues)[number]
+type SenderType = (typeof messageSender.enumValues)[number]
+export type InboxFilter = "all" | "unread" | "needs_reply" | "replied"
 
 async function getMemberId(tenant: TenantContext) {
   const [row] = await db
     .select({ id: member.id })
     .from(member)
-    .where(
-      and(
-        eq(member.userId, tenant.userId),
-        eq(member.organizationId, tenant.organizationId),
-      ),
-    )
-    .limit(1);
+    .where(and(eq(member.userId, tenant.userId), eq(member.organizationId, tenant.organizationId)))
+    .limit(1)
 
-  return row?.id ?? null;
+  return row?.id ?? null
 }
 
 function scopeCondition(tenant: TenantContext, memberId: string | null) {
-  const orgCond = eq(conversation.organizationId, tenant.organizationId);
-  if (tenant.isSuperAdmin) return undefined; // pas de scope du tout
-  if (tenant.role === "admin") return orgCond;
-  return and(orgCond, eq(conversation.ownerId, memberId ?? ""));
+  const orgCond = eq(conversation.organizationId, tenant.organizationId)
+  if (tenant.isSuperAdmin) return undefined // pas de scope du tout
+  if (tenant.role === "admin") return orgCond
+  return and(orgCond, eq(conversation.ownerId, memberId ?? ""))
 }
 
 export const conversationService = {
@@ -40,8 +35,8 @@ export const conversationService = {
    * - replied       -> dernier message vient de nous
    */
   async list(tenant: TenantContext, filter: InboxFilter = "all") {
-    const memberId = await getMemberId(tenant);
-    const base = scopeCondition(tenant, memberId);
+    const memberId = await getMemberId(tenant)
+    const base = scopeCondition(tenant, memberId)
 
     const filterCond =
       filter === "unread"
@@ -50,9 +45,9 @@ export const conversationService = {
           ? eq(conversation.lastMessageFrom, "lead")
           : filter === "replied"
             ? eq(conversation.lastMessageFrom, "member")
-            : undefined;
+            : undefined
 
-    const where = base && filterCond ? and(base, filterCond) : (base ?? filterCond);
+    const where = base && filterCond ? and(base, filterCond) : (base ?? filterCond)
 
     return db
       .select({
@@ -73,13 +68,13 @@ export const conversationService = {
       .innerJoin(lead, eq(lead.id, conversation.leadId))
       .innerJoin(campaign, eq(campaign.id, conversation.mailId))
       .where(where)
-      .orderBy(desc(conversation.lastMessageAt));
+      .orderBy(desc(conversation.lastMessageAt))
   },
 
   /** Compteurs pour la sidebar (Unified Inbox / Unread / Needs Reply / Replied) */
   async getSidebarCounts(tenant: TenantContext) {
-    const memberId = await getMemberId(tenant);
-    const base = scopeCondition(tenant, memberId);
+    const memberId = await getMemberId(tenant)
+    const base = scopeCondition(tenant, memberId)
 
     const [row] = await db
       .select({
@@ -89,33 +84,29 @@ export const conversationService = {
         replied: sql<number>`count(*) filter (where ${conversation.lastMessageFrom} = 'member')`,
       })
       .from(conversation)
-      .where(base);
+      .where(base)
 
-    return row;
+    return row
   },
 
   async getById(tenant: TenantContext, id: string) {
-    const [row] = await db.select().from(conversation).where(eq(conversation.id, id)).limit(1);
-    if (!row) return null;
-    if (tenant.isSuperAdmin) return row;
-    if (row.organizationId !== tenant.organizationId) return null;
-    if (tenant.role === "admin") return row;
+    const [row] = await db.select().from(conversation).where(eq(conversation.id, id)).limit(1)
+    if (!row) return null
+    if (tenant.isSuperAdmin) return row
+    if (row.organizationId !== tenant.organizationId) return null
+    if (tenant.role === "admin") return row
 
-    const memberId = await getMemberId(tenant);
-    if (row.ownerId !== memberId) return null;
+    const memberId = await getMemberId(tenant)
+    if (row.ownerId !== memberId) return null
 
-    return row;
+    return row
   },
 
   async getMessages(tenant: TenantContext, conversationId: string) {
-    const convo = await this.getById(tenant, conversationId);
-    if (!convo) return null;
+    const convo = await this.getById(tenant, conversationId)
+    if (!convo) return null
 
-    return db
-      .select()
-      .from(message)
-      .where(eq(message.conversationId, conversationId))
-      .orderBy(message.sentAt);
+    return db.select().from(message).where(eq(message.conversationId, conversationId)).orderBy(message.sentAt)
   },
 
   /**
@@ -133,9 +124,9 @@ export const conversationService = {
         organizationId: tenant.organizationId,
         ownerId: data.ownerId ?? (await getMemberId(tenant)),
       })
-      .returning();
+      .returning()
 
-    return row;
+    return row
   },
 
   /** Envoie un message et met à jour le snapshot de la conversation */
@@ -144,11 +135,11 @@ export const conversationService = {
     conversationId: string,
     data: { body: string; subject?: string; hasAttachment?: boolean; senderType?: SenderType },
   ) {
-    const convo = await this.getById(tenant, conversationId);
-    if (!convo) return null;
+    const convo = await this.getById(tenant, conversationId)
+    if (!convo) return null
 
-    const memberId = await getMemberId(tenant);
-    const senderType: SenderType = data.senderType ?? "member";
+    const memberId = await getMemberId(tenant)
+    const senderType: SenderType = data.senderType ?? "member"
 
     const [msg] = await db
       .insert(message)
@@ -162,7 +153,7 @@ export const conversationService = {
         body: data.body,
         hasAttachment: data.hasAttachment ?? false,
       })
-      .returning();
+      .returning()
 
     await db
       .update(conversation)
@@ -174,34 +165,26 @@ export const conversationService = {
         hasAttachment: data.hasAttachment ?? convo.hasAttachment,
         messageCount: convo.messageCount + 1,
       })
-      .where(eq(conversation.id, conversationId));
+      .where(eq(conversation.id, conversationId))
 
-    return msg;
+    return msg
   },
 
   async markAsRead(tenant: TenantContext, id: string) {
-    const convo = await this.getById(tenant, id);
-    if (!convo) return null;
+    const convo = await this.getById(tenant, id)
+    if (!convo) return null
 
-    const [row] = await db
-      .update(conversation)
-      .set({ unread: false })
-      .where(eq(conversation.id, id))
-      .returning();
+    const [row] = await db.update(conversation).set({ unread: false }).where(eq(conversation.id, id)).returning()
 
-    return row;
+    return row
   },
 
   async updateSentiment(tenant: TenantContext, id: string, value: Sentiment | null) {
-    const convo = await this.getById(tenant, id);
-    if (!convo) return null;
+    const convo = await this.getById(tenant, id)
+    if (!convo) return null
 
-    const [row] = await db
-      .update(conversation)
-      .set({ sentiment: value })
-      .where(eq(conversation.id, id))
-      .returning();
+    const [row] = await db.update(conversation).set({ sentiment: value }).where(eq(conversation.id, id)).returning()
 
-    return row;
+    return row
   },
-};
+}

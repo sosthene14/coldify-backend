@@ -1,1 +1,5 @@
 docker exec -it coldy-db psql -U coldy -d coldy
+
+bunx drizzle-kit generate
+
+bunx drizzle-kit migrate

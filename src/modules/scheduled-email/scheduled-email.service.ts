@@ -1,7 +1,7 @@
-import { db } from "../../shared/db";
-import { scheduledEmails } from "./scheduled-email.schema";
-import { eq, and, lte, gte } from "drizzle-orm";
-import type { NewScheduledEmail, ScheduledEmail } from "./scheduled-email.schema";
+import { and, eq, lte } from "drizzle-orm"
+import { db } from "../../shared/db"
+import type { NewScheduledEmail, ScheduledEmail } from "./scheduled-email.schema"
+import { scheduledEmails } from "./scheduled-email.schema"
 
 export const scheduledEmailService = {
   /**
@@ -9,14 +9,11 @@ export const scheduledEmailService = {
    */
   async create(data: NewScheduledEmail): Promise<ScheduledEmail> {
     if (data.scheduledAt <= new Date()) {
-      throw new Error("scheduledAt must be in the future");
+      throw new Error("scheduledAt must be in the future")
     }
 
-    const [scheduledEmail] = await db
-      .insert(scheduledEmails)
-      .values(data)
-      .returning();
-    return scheduledEmail;
+    const [scheduledEmail] = await db.insert(scheduledEmails).values(data).returning()
+    return scheduledEmail
   },
 
   /**
@@ -26,15 +23,10 @@ export const scheduledEmailService = {
     const [scheduledEmail] = await db
       .select()
       .from(scheduledEmails)
-      .where(
-        and(
-          eq(scheduledEmails.id, id),
-          eq(scheduledEmails.organizationId, organizationId)
-        )
-      )
-      .limit(1);
+      .where(and(eq(scheduledEmails.id, id), eq(scheduledEmails.organizationId, organizationId)))
+      .limit(1)
 
-    return scheduledEmail || null;
+    return scheduledEmail || null
   },
 
   /**
@@ -45,7 +37,7 @@ export const scheduledEmailService = {
       .select()
       .from(scheduledEmails)
       .where(eq(scheduledEmails.organizationId, organizationId))
-      .orderBy(scheduledEmails.scheduledAt);
+      .orderBy(scheduledEmails.scheduledAt)
   },
 
   /**
@@ -55,13 +47,8 @@ export const scheduledEmailService = {
     return db
       .select()
       .from(scheduledEmails)
-      .where(
-        and(
-          eq(scheduledEmails.status, "pending"),
-          lte(scheduledEmails.scheduledAt, beforeDate)
-        )
-      )
-      .orderBy(scheduledEmails.scheduledAt);
+      .where(and(eq(scheduledEmails.status, "pending"), lte(scheduledEmails.scheduledAt, beforeDate)))
+      .orderBy(scheduledEmails.scheduledAt)
   },
 
   /**
@@ -71,11 +58,11 @@ export const scheduledEmailService = {
     id: string,
     status: "pending" | "processing" | "sent" | "failed" | "cancelled",
     updates?: {
-      sentAt?: Date;
-      failedAt?: Date;
-      errorMessage?: string;
-      retryCount?: number;
-    }
+      sentAt?: Date
+      failedAt?: Date
+      errorMessage?: string
+      retryCount?: number
+    },
   ): Promise<void> {
     await db
       .update(scheduledEmails)
@@ -84,7 +71,7 @@ export const scheduledEmailService = {
         ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(scheduledEmails.id, id));
+      .where(eq(scheduledEmails.id, id))
   },
 
   /**
@@ -97,32 +84,23 @@ export const scheduledEmailService = {
         jobId,
         updatedAt: new Date(),
       })
-      .where(eq(scheduledEmails.id, id));
+      .where(eq(scheduledEmails.id, id))
   },
 
   /**
    * Update scheduled email
    */
-  async update(
-    id: string,
-    organizationId: string,
-    data: Partial<NewScheduledEmail>
-  ): Promise<ScheduledEmail | null> {
+  async update(id: string, organizationId: string, data: Partial<NewScheduledEmail>): Promise<ScheduledEmail | null> {
     const [updated] = await db
       .update(scheduledEmails)
       .set({
         ...data,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(scheduledEmails.id, id),
-          eq(scheduledEmails.organizationId, organizationId)
-        )
-      )
-      .returning();
+      .where(and(eq(scheduledEmails.id, id), eq(scheduledEmails.organizationId, organizationId)))
+      .returning()
 
-    return updated || null;
+    return updated || null
   },
 
   /**
@@ -139,12 +117,12 @@ export const scheduledEmailService = {
         and(
           eq(scheduledEmails.id, id),
           eq(scheduledEmails.organizationId, organizationId),
-          eq(scheduledEmails.status, "pending")
-        )
-      );
+          eq(scheduledEmails.status, "pending"),
+        ),
+      )
 
-    //@ts-ignore type mismatch
-    return result.rowCount > 0;
+    //@ts-expect-error type mismatch
+    return result.rowCount > 0
   },
 
   /**
@@ -153,15 +131,10 @@ export const scheduledEmailService = {
   async deleteOldEmails(beforeDate: Date): Promise<number> {
     const result = await db
       .delete(scheduledEmails)
-      .where(
-        and(
-          lte(scheduledEmails.createdAt, beforeDate),
-          eq(scheduledEmails.status, "sent")
-        )
-      );
+      .where(and(lte(scheduledEmails.createdAt, beforeDate), eq(scheduledEmails.status, "sent")))
 
-    //@ts-ignore type mismatch
-    return result.rowCount;
+    //@ts-expect-error type mismatch
+    return result.rowCount
   },
 
   /**
@@ -172,20 +145,20 @@ export const scheduledEmailService = {
       .select()
       .from(scheduledEmails)
       .where(eq(scheduledEmails.mailboxId, mailboxId))
-      .orderBy(scheduledEmails.scheduledAt);
+      .orderBy(scheduledEmails.scheduledAt)
   },
 
   /**
    * Get statistics for an organization
    */
   async getStats(organizationId: string): Promise<{
-    total: number;
-    pending: number;
-    sent: number;
-    failed: number;
-    cancelled: number;
+    total: number
+    pending: number
+    sent: number
+    failed: number
+    cancelled: number
   }> {
-    const allEmails = await this.getByOrganization(organizationId);
+    const allEmails = await this.getByOrganization(organizationId)
 
     return {
       total: allEmails.length,
@@ -193,7 +166,7 @@ export const scheduledEmailService = {
       sent: allEmails.filter((e) => e.status === "sent").length,
       failed: allEmails.filter((e) => e.status === "failed").length,
       cancelled: allEmails.filter((e) => e.status === "cancelled").length,
-    };
+    }
   },
 
   /**
@@ -202,13 +175,8 @@ export const scheduledEmailService = {
   async delete(id: string, organizationId: string): Promise<boolean> {
     const result = await db
       .delete(scheduledEmails)
-      .where(
-        and(
-          eq(scheduledEmails.id, id),
-          eq(scheduledEmails.organizationId, organizationId)
-        )
-      );
+      .where(and(eq(scheduledEmails.id, id), eq(scheduledEmails.organizationId, organizationId)))
 
-    return result.length > 0;
+    return result.length > 0
   },
-};
+}

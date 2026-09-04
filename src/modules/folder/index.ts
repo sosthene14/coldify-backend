@@ -1,3 +1,3 @@
-export { folderController } from './folder.controller';
-export { folderService } from './folder.service';
-export * from './folder.schema';
+export { folderController } from "./folder.controller"
+export * from "./folder.schema"
+export { folderService } from "./folder.service"

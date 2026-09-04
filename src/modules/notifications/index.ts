@@ -1,3 +1,3 @@
-export { notificationController } from './notifications.controller';
-export { notificationService } from './notifications.service';
-export * from './notifications.schema';
+export { notificationController } from "./notifications.controller"
+export * from "./notifications.schema"
+export { notificationService } from "./notifications.service"

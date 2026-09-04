@@ -1,15 +1,7 @@
-import { createId } from "@paralleldrive/cuid2";
-import {
-  pgTable,
-  text,
-  integer,
-  boolean,
-  timestamp,
-  jsonb,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import {  organization } from "../../shared/db/schema/auth";
-
+import { createId } from "@paralleldrive/cuid2"
+import { relations } from "drizzle-orm"
+import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { organization } from "../../shared/db/schema/auth"
 
 export const plans = pgTable("plans", {
   id: text("id").primaryKey(), // "free" | "pro" | "unlimited"
@@ -30,7 +22,7 @@ export const plans = pgTable("plans", {
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+})
 
 // ---------------------------------------------------------------------------
 // Table : subscriptions
@@ -61,7 +53,7 @@ export const subscriptions = pgTable("subscriptions", {
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+})
 
 // ---------------------------------------------------------------------------
 // Table : subscription_events
@@ -78,7 +70,7 @@ export const subscriptionEvents = pgTable("subscription_events", {
 
   processedAt: timestamp("processed_at"),
   receivedAt: timestamp("received_at").defaultNow().notNull(),
-});
+})
 
 // ---------------------------------------------------------------------------
 // Relations
@@ -94,14 +86,11 @@ export const subscriptionsRelations = relations(subscriptions, ({ one, many }) =
     references: [plans.id],
   }),
   events: many(subscriptionEvents),
-}));
+}))
 
-export const subscriptionEventsRelations = relations(
-  subscriptionEvents,
-  ({ one }) => ({
-    subscription: one(subscriptions, {
-      fields: [subscriptionEvents.subscriptionId],
-      references: [subscriptions.id],
-    }),
-  })
-);
+export const subscriptionEventsRelations = relations(subscriptionEvents, ({ one }) => ({
+  subscription: one(subscriptions, {
+    fields: [subscriptionEvents.subscriptionId],
+    references: [subscriptions.id],
+  }),
+}))

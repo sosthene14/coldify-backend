@@ -1,28 +1,33 @@
-import { db } from "../../shared/db";
-import { emailEvent } from "./reporting.schema";
-import { emailHistory } from "../email-history/email-history.schema";
-import { nanoid } from "nanoid";
-import { eq, and, sql, desc } from "drizzle-orm";
-import { emitEmailOpened } from "../../shared/lib/websocket";
-import { templateService } from "../template/template.service";
+import { and, desc, eq, sql } from "drizzle-orm"
+import { nanoid } from "nanoid"
+import { db } from "../../shared/db"
+import { sendPushNotification } from "../../shared/lib/push-notifications"
+import { emitEmailOpened } from "../../shared/lib/websocket"
+import { emailHistory } from "../email-history/email-history.schema"
+import { templateService } from "../template/template.service"
+import { emailEvent } from "./reporting.schema"
 
 export interface RecordOpenParams {
-  organizationId: string;
-  emailHistoryId?: string;
-  campaignId?: string;
-  leadId?: string;
-  recipient: string;
-  userAgent?: string;
-  ipAddress?: string;
+  organizationId: string
+  userId: string
+  emailHistoryId?: string
+  campaignId?: string
+  leadId?: string
+  recipient: string
+  userAgent?: string
+  ipAddress?: string
 }
 
 export const emailTrackingService = {
   /**
    * Record email open event - tracks every open, even duplicates
    */
-  async recordOpen(params: RecordOpenParams): Promise<void> {
+  async recordOpen(
+    params: RecordOpenParams,
+    trackingData: import("../../shared/lib/email-tracking").TrackingData,
+  ): Promise<void> {
     try {
-      const now = new Date();
+      const now = new Date()
 
       // Insert into email_event (detailed tracking)
       await db.insert(emailEvent).values({
@@ -32,7 +37,7 @@ export const emailTrackingService = {
         leadId: params.leadId || null,
         templateId: null,
         memberId: null,
-        type: 'opened',
+        type: "opened",
         metadata: {
           recipient: params.recipient,
           emailHistoryId: params.emailHistoryId,
@@ -41,9 +46,9 @@ export const emailTrackingService = {
           openedAt: now.toISOString(),
         },
         occurredAt: now,
-      });
+      })
 
-      console.log('[Email Tracking] Open event recorded for:', params.recipient);
+      console.log("[Email Tracking] Open event recorded for:", params.recipient)
 
       // Update email_history with denormalized stats (if emailHistoryId exists)
       if (params.emailHistoryId) {
@@ -52,7 +57,7 @@ export const emailTrackingService = {
           .select()
           .from(emailHistory)
           .where(eq(emailHistory.id, params.emailHistoryId))
-          .limit(1);
+          .limit(1)
 
         if (emailHistoryRecord) {
           // Calculate unique opens by counting distinct recipients in email_event
@@ -61,14 +66,14 @@ export const emailTrackingService = {
             .from(emailEvent)
             .where(
               and(
-                eq(emailEvent.type, 'opened'),
-                sql`${emailEvent.metadata}->>'emailHistoryId' = ${params.emailHistoryId}`
-              )
-            );
+                eq(emailEvent.type, "opened"),
+                sql`${emailEvent.metadata}->>'emailHistoryId' = ${params.emailHistoryId}`,
+              ),
+            )
 
-          const uniqueOpens = Number(uniqueRecipientsResult[0]?.count || 1);
-          const totalOpens = emailHistoryRecord.totalOpens + 1;
-          const firstOpenedAt = emailHistoryRecord.firstOpenedAt || now;
+          const uniqueOpens = Number(uniqueRecipientsResult[0]?.count || 1)
+          const totalOpens = emailHistoryRecord.totalOpens + 1
+          const firstOpenedAt = emailHistoryRecord.firstOpenedAt || now
 
           // Update email_history with aggregated stats
           await db
@@ -79,28 +84,44 @@ export const emailTrackingService = {
               firstOpenedAt,
               lastOpenedAt: now,
             })
-            .where(eq(emailHistory.id, params.emailHistoryId));
+            .where(eq(emailHistory.id, params.emailHistoryId))
 
           // Emit real-time notification via WebSocket
-          emitEmailOpened(params.organizationId, {
+          emitEmailOpened(trackingData.userId, {
             emailHistoryId: params.emailHistoryId,
             recipient: params.recipient,
             openedAt: now.toISOString(),
             userAgent: params.userAgent,
             totalOpens,
-          });
+          })
+
+          // Send push notification to user (works even if app is closed)
+          if (trackingData.userId) {
+            sendPushNotification(trackingData.userId, {
+              title: "📧So-mails: Email ouvert",
+              body: `${params.recipient} a ouvert votre email "${emailHistoryRecord.subject}" (${totalOpens}x)`,
+              icon: "https://so-mails.com/logo.png",
+              data: {
+                emailHistoryId: params.emailHistoryId,
+                recipient: params.recipient,
+                url: "/dashboard/mails",
+              },
+            }).catch((err) => {
+              console.error("[Email Tracking] Failed to send push notification:", err)
+            })
+          }
 
           // Update template statistics if this email was created from a template
           if (emailHistoryRecord.templateId) {
             // Update template stats asynchronously (don't await to avoid blocking)
-            templateService.updateTemplateStats(emailHistoryRecord.templateId).catch(err => {
-              console.error('[Email Tracking] Failed to update template stats:', err);
-            });
+            templateService.updateTemplateStats(emailHistoryRecord.templateId).catch((err) => {
+              console.error("[Email Tracking] Failed to update template stats:", err)
+            })
           }
         }
       }
     } catch (error) {
-      console.error('[Email Tracking] Failed to record open:', error);
+      console.error("[Email Tracking] Failed to record open:", error)
       // Don't throw - tracking failures shouldn't break anything
     }
   },
@@ -109,70 +130,58 @@ export const emailTrackingService = {
    * Get open statistics for an email
    */
   async getOpenStats(emailHistoryId: string): Promise<{
-    totalOpens: number;
-    uniqueOpens: number;
-    firstOpenedAt?: Date;
-    lastOpenedAt?: Date;
+    totalOpens: number
+    uniqueOpens: number
+    firstOpenedAt?: Date
+    lastOpenedAt?: Date
   }> {
     const opens = await db
       .select()
       .from(emailEvent)
-      .where(
-        and(
-          eq(emailEvent.type, 'opened'),
-          sql`${emailEvent.metadata}->>'emailHistoryId' = ${emailHistoryId}`
-        )
-      );
+      .where(and(eq(emailEvent.type, "opened"), sql`${emailEvent.metadata}->>'emailHistoryId' = ${emailHistoryId}`))
 
     if (opens.length === 0) {
       return {
         totalOpens: 0,
         uniqueOpens: 0,
-      };
+      }
     }
 
     // Group by recipient to count unique opens
-    const uniqueRecipients = new Set(
-      opens.map((event: any) => event.metadata?.recipient).filter(Boolean)
-    );
+    const uniqueRecipients = new Set(opens.map((event: any) => event.metadata?.recipient).filter(Boolean))
 
-    const sortedOpens = opens.sort(
-      (a, b) => a.occurredAt.getTime() - b.occurredAt.getTime()
-    );
+    const sortedOpens = opens.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime())
 
     return {
       totalOpens: opens.length,
       uniqueOpens: uniqueRecipients.size,
       firstOpenedAt: sortedOpens[0]?.occurredAt,
       lastOpenedAt: sortedOpens[sortedOpens.length - 1]?.occurredAt,
-    };
+    }
   },
 
   /**
    * Get detailed open events for an email
    */
-  async getOpenDetails(emailHistoryId: string): Promise<Array<{
-    id: string;
-    recipient: string;
-    openedAt: Date;
-    userAgent?: string;
-  }>> {
+  async getOpenDetails(emailHistoryId: string): Promise<
+    Array<{
+      id: string
+      recipient: string
+      openedAt: Date
+      userAgent?: string
+    }>
+  > {
     const opens = await db
       .select()
       .from(emailEvent)
-      .where(
-        and(
-          eq(emailEvent.type, 'opened'),
-          sql`${emailEvent.metadata}->>'emailHistoryId' = ${emailHistoryId}`
-        )
-      )
-      .orderBy(desc(emailEvent.occurredAt));
+      .where(and(eq(emailEvent.type, "opened"), sql`${emailEvent.metadata}->>'emailHistoryId' = ${emailHistoryId}`))
+      .orderBy(desc(emailEvent.occurredAt))
 
     return opens.map((event: any) => ({
       id: event.id,
-      recipient: event.metadata?.recipient || 'Unknown',
+      recipient: event.metadata?.recipient || "Unknown",
       openedAt: event.occurredAt,
       userAgent: event.metadata?.userAgent,
-    }));
+    }))
   },
-};
+}

@@ -22,7 +22,7 @@ export function renderEmailTemplate({
 
   return `
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -64,10 +64,8 @@ export function renderEmailTemplate({
             <td class="email-padding" style="padding: 32px 40px 24px 40px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td>
-                    <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 600; color: #1c1c1e; letter-spacing: -0.2px;">
-                      So-mails
-                    </span>
+                  <td align="center">
+                    <img src="https://so-mails.com/logo.png" alt="So-mails" width="120" style="display:block; max-width:120px; height:auto;" />
                   </td>
                 </tr>
               </table>
@@ -94,7 +92,9 @@ export function renderEmailTemplate({
                       ${bodyText}
                     </p>
 
-                    ${ctaUrl && ctaLabel ? `
+                    ${
+                      ctaUrl && ctaLabel
+                        ? `
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" style="border-radius: 6px; background-color: #1c7ed6;">
@@ -107,10 +107,12 @@ export function renderEmailTemplate({
                     </table>
 
                     <p style="margin: 24px 0 0 0; font-size: 12px; line-height: 18px; color: #a1a1aa;">
-                      Or copy and paste this link into your browser:<br />
+                      Ou copiez-collez ce lien dans votre navigateur :<br />
                       <a href="${ctaUrl}" style="color: #1c7ed6; text-decoration: none; word-break: break-all;">${ctaUrl}</a>
                     </p>
-                    ` : ''}
+                    `
+                        : ""
+                    }
 
                   </td>
                 </tr>
@@ -125,10 +127,10 @@ export function renderEmailTemplate({
                 <tr>
                   <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
                     <p style="margin: 0; font-size: 12px; line-height: 18px; color: #a1a1aa;">
-                      This email was sent to ${recipientEmail}. If you didn't request this, you can safely ignore it.
+                      Cet email a été envoyé à ${recipientEmail}. Si vous n'êtes pas à l'origine de cette demande, vous pouvez l'ignorer en toute sécurité.
                     </p>
                     <p style="margin: 8px 0 0 0; font-size: 12px; line-height: 18px; color: #a1a1aa;">
-                      © ${year} So-mails. All rights reserved.
+                      © ${year} So-mails. Tous droits réservés.
                     </p>
                   </td>
                 </tr>
