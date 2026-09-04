@@ -1,5 +1,9 @@
 // Script to run organization email quota migration
 
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import postgres from "postgres"
+
 const DATABASE_URL = process.env.DATABASE_URL || "postgresql://somails:somails_dev_password@localhost:5432/somails";
 
 async function runMigration() {

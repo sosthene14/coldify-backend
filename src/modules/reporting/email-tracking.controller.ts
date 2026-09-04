@@ -9,7 +9,7 @@ import { emailTrackingService } from "./email-tracking.service"
  * Handles tracking pixel requests for email opens.
  * Uses disguised endpoint to avoid ad blockers: /api/success/:token
  */
-export const emailTrackingController = new Elysia({ prefix: "/" })
+export const emailTrackingController = new Elysia({ prefix: "" })
   /**
    * Track email open - Public endpoint (no auth required)
    */

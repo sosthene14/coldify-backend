@@ -4,6 +4,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
+    "build": "bunx tsc --noEmit && bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
     "migrate:notification-preferences": "bun run scripts/run-notification-preferences-migration.ts",
     "migrate:quota": "bun run scripts/run-quota-migration.ts",
     "lint": "biome check .",
@@ -36,7 +38,8 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^6.4.17",
     "@types/sanitize-html": "^2.16.1",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "typescript": "^7.0.2"
   },
   "module": "src/index.js"
 }
