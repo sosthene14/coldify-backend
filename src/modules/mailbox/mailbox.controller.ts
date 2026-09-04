@@ -17,8 +17,7 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
    * List all mailboxes
    */
   .get("/", async ({ tenant }) => {
-    console.log("jjes dhdhd ssss")
-    const mailboxes = await mailboxService.list(tenant.organizationId)
+     const mailboxes = await mailboxService.list(tenant.organizationId)
     return mailboxes
   })
 
@@ -551,11 +550,7 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
   .post(
     "/schedule",
     async ({ body, tenant }) => {
-      // Log timezone information for debugging
-      if (body.timezone) {
-        console.log(`[Schedule Email] User timezone: ${body.timezone}, Scheduled for: ${body.scheduledAt}`)
-      }
-
+   
       const result = await emailSendService.scheduleEmail({
         mailboxId: body.mailboxId,
         organizationId: tenant.organizationId,

@@ -15,8 +15,7 @@ export async function createPersonalOrganization(user: {
     const existingMember = await db.select({ id: member.id }).from(member).where(eq(member.userId, user.id)).limit(1)
 
     if (existingMember.length > 0) {
-      console.log(`[Organization] User ${user.email} already has an organization`)
-      return null
+       return null
     }
 
     // Create organization name from user's first/last name or email
@@ -65,8 +64,7 @@ export async function createPersonalOrganization(user: {
     // Create free subscription for the organization
     await subscriptionService.createFreeSubscription(organizationId)
 
-    console.log(`[Organization] Created personal organization "${organizationName}" for user ${user.email}`)
-    return createdOrg
+     return createdOrg
   } catch (error) {
     console.error("[Organization] Failed to create personal organization:", error)
     throw error

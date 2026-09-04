@@ -24,8 +24,7 @@ export const userController = new Elysia({ prefix: "/user" })
     "/profile",
     async ({ body, request, set }) => {
       try {
-        console.log("=== PROFILE UPDATE START ===")
-        console.log("Request body:", body)
+ 
 
         // Get authenticated user directly from auth session
         const authSession = await auth.api.getSession({
@@ -33,8 +32,7 @@ export const userController = new Elysia({ prefix: "/user" })
         })
 
         if (!authSession) {
-          console.log("❌ No auth session found")
-          set.status = 401
+           set.status = 401
           return {
             error: "Not authenticated",
             status: 401,
@@ -42,8 +40,7 @@ export const userController = new Elysia({ prefix: "/user" })
         }
 
         const { user: authUser } = authSession
-        console.log("✅ Authenticated user:", { id: authUser.id, email: authUser.email })
-
+ 
         // Use Better Auth to update user
         const updateData: any = {}
         if (body.firstName !== undefined) updateData.firstName = body.firstName
@@ -58,8 +55,7 @@ export const userController = new Elysia({ prefix: "/user" })
           updateData.name = `${fn} ${ln}`.trim() || authUser.email
         }
 
-        console.log("📝 Updating user with Better Auth:", updateData)
-
+ 
         // Call Better Auth API to update user and refresh cookieCache / session
         try {
           await auth.api.updateUser({
@@ -81,8 +77,7 @@ export const userController = new Elysia({ prefix: "/user" })
           language: user.language,
         })
 
-        console.log("📄 Database update result:", updatedUser)
-
+ 
         // VERIFICATION: Re-select from database to confirm the update was persisted
         const [verificationUser] = await db
           .select({
@@ -97,19 +92,16 @@ export const userController = new Elysia({ prefix: "/user" })
           .from(user)
           .where(eq(user.id, authUser.id))
 
-        console.log("🔍 VERIFICATION - Data actually in DB:", verificationUser)
-
+ 
         if (!updatedUser) {
-          console.log("❌ No user found to update")
-          set.status = 404
+           set.status = 404
           return {
             error: "User not found",
             status: 404,
           }
         }
 
-        console.log("✅ Profile updated successfully")
-        console.log("=== PROFILE UPDATE END ===")
+     
 
         return {
           message: "Profile updated successfully",
@@ -312,15 +304,13 @@ export const userController = new Elysia({ prefix: "/user" })
    */
   .get("/sessions", async ({ request, set }) => {
     try {
-      console.log("=== SESSIONS REQUEST START ===")
-
+ 
       const authSession = await auth.api.getSession({
         headers: request.headers,
       })
 
       if (!authSession) {
-        console.log("❌ No auth session found")
-        set.status = 401
+         set.status = 401
         return {
           error: "Not authenticated",
           status: 401,
@@ -328,8 +318,7 @@ export const userController = new Elysia({ prefix: "/user" })
       }
 
       const { user: authUser, session: currentSession } = authSession
-      console.log("✅ Authenticated user:", { id: authUser.id, email: authUser.email })
-      console.log("✅ Current session:", currentSession)
+ 
 
       let activeSessions: any[] = []
       try {
@@ -340,8 +329,7 @@ export const userController = new Elysia({ prefix: "/user" })
           activeSessions = authSessions
         }
       } catch (e) {
-        console.log("⚠️ auth.api.listSessions fallback to DB:", e)
-      }
+       }
 
       if (activeSessions.length === 0) {
         activeSessions = await db
@@ -357,8 +345,7 @@ export const userController = new Elysia({ prefix: "/user" })
           .where(and(eq(session.userId, authUser.id), gt(session.expiresAt, new Date())))
       }
 
-      console.log("📄 Active sessions found:", activeSessions)
-
+ 
       const formattedSessions = activeSessions.map((s) => {
         const isCurrent = s.id === currentSession.id || s.token === currentSession.token
         const rawIp =
@@ -397,8 +384,7 @@ export const userController = new Elysia({ prefix: "/user" })
         })
       }
 
-      console.log("📋 Final formatted sessions list:", formattedSessions)
-      console.log("=== SESSIONS REQUEST END ===")
+ 
 
       return {
         sessions: formattedSessions,
@@ -463,8 +449,7 @@ export const userController = new Elysia({ prefix: "/user" })
           await redisConnection.del(params.sessionId).catch(() => {})
           return { message: "Session revoked successfully" }
         } catch (e) {
-          console.log("❌ Revoke session fallback failed:", e)
-          set.status = 404
+           set.status = 404
           return { error: "Session not found", status: 404 }
         }
       }
@@ -476,8 +461,7 @@ export const userController = new Elysia({ prefix: "/user" })
           headers: request.headers,
         })
       } catch (e) {
-        console.log("⚠️ auth.api.revokeSession fallback to DB delete:", e)
-      }
+       }
 
       // 3. Delete from DB
       await db.delete(session).where(eq(session.id, targetSession.id))

@@ -10,8 +10,7 @@ const worker = new Worker<ScheduledEmailJobData>(
   async (job: Job<ScheduledEmailJobData>) => {
     const { scheduledEmailId, organizationId, mailboxId, ...emailData } = job.data
 
-    console.log(`[Scheduled Email Worker] Processing scheduled email: ${scheduledEmailId}`)
-
+ 
     try {
       // Update status to processing
       await scheduledEmailService.updateStatus(scheduledEmailId, "processing")
@@ -37,8 +36,7 @@ const worker = new Worker<ScheduledEmailJobData>(
             if (attachment.objectKey) {
               try {
                 await attachmentUploadService.deleteAttachment(attachment.objectKey)
-                console.log(`[Scheduled Email Worker] Deleted attachment after send: ${attachment.objectKey}`)
-              } catch (error) {
+               } catch (error) {
                 console.error(`[Scheduled Email Worker] Failed to delete attachment ${attachment.objectKey}:`, error)
                 // Don't fail the whole job if attachment deletion fails
               }
@@ -46,9 +44,7 @@ const worker = new Worker<ScheduledEmailJobData>(
           }
         }
 
-        console.log(
-          `[Scheduled Email Worker] Successfully sent scheduled email: ${scheduledEmailId}. Sent to ${result.totalSent || 1} recipients.`,
-        )
+        
 
         return {
           success: true,
@@ -82,9 +78,7 @@ const worker = new Worker<ScheduledEmailJobData>(
             if (attachment.objectKey) {
               try {
                 await attachmentUploadService.deleteAttachment(attachment.objectKey)
-                console.log(
-                  `[Scheduled Email Worker] Deleted attachment after permanent failure: ${attachment.objectKey}`,
-                )
+             
               } catch (delError) {
                 console.error(`[Scheduled Email Worker] Failed to delete attachment ${attachment.objectKey}:`, delError)
               }
@@ -123,6 +117,5 @@ worker.on("error", (err) => {
   console.error("[Scheduled Email Worker] Worker error:", err)
 })
 
-console.log("[Scheduled Email Worker] Started and waiting for jobs...")
-
+ 
 export default worker

@@ -376,8 +376,7 @@ export const emailSendService = {
           // Inject tracking pixel into HTML
           const htmlWithTracking = injectTrackingPixel(params.html, trackingToken)
 
-          console.log(htmlWithTracking)
-
+ 
           let result: EmailSendResult
 
           // Send via appropriate provider

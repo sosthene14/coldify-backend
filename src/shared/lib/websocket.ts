@@ -11,8 +11,7 @@ const userSockets = new Map<string, Set<ServerWebSocket<WebSocketData>>>()
  * Initialize WebSocket tracking
  */
 export function initWebSocket(_app: Elysia) {
-  console.log("[WebSocket] Tracking initialized")
-
+ 
   // Clean up dead sockets every 30 seconds
   setInterval(() => {
     cleanupDeadSockets()
@@ -47,9 +46,7 @@ function cleanupDeadSockets() {
     }
   })
 
-  if (totalCleaned > 0) {
-    console.log(`[WebSocket] Cleanup: Removed ${totalCleaned} dead sockets`)
-  }
+ 
 }
 
 export interface WebSocketMessage {
@@ -64,8 +61,7 @@ export function broadcastToUser(userId: string, message: WebSocketMessage) {
   const sockets = userSockets.get(userId)
 
   if (!sockets || sockets.size === 0) {
-    console.log(`[WebSocket] No clients connected for user: ${userId}`)
-    return
+     return
   }
 
   const messageStr = JSON.stringify(message)
@@ -92,13 +88,9 @@ export function broadcastToUser(userId: string, message: WebSocketMessage) {
   // Clean up dead sockets
   deadSockets.forEach((ws) => {
     sockets.delete(ws)
-    console.log(`[WebSocket] Removed dead socket from user: ${userId}`)
-  })
+   })
 
-  console.log(
-    `[WebSocket] Broadcasted to ${sent} clients for user: ${userId} (${deadSockets.length} dead sockets removed)`,
-  )
-
+ 
   // Clean up empty sets
   if (sockets.size === 0) {
     userSockets.delete(userId)
@@ -125,8 +117,7 @@ export function joinUser(ws: ServerWebSocket<WebSocketData>, userId: string) {
   sockets.add(ws)
   ws.data.userId = userId
 
-  console.log(`[WebSocket] Client joined user: ${userId} (${sockets.size} total clients)`)
-}
+ }
 
 /**
  * Remove socket from user room
@@ -143,8 +134,7 @@ export function leaveUser(ws: ServerWebSocket<WebSocketData>) {
         userSockets.delete(userId)
       }
 
-      console.log(`[WebSocket] Client left user: ${userId}`)
-    }
+     }
   }
 }
 

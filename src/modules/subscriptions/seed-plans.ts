@@ -59,8 +59,7 @@ export async function seedPlans() {
       },
     })
 
-  console.log("✅ Plans seedés : free, pro, unlimited")
-}
+ }
 
 // Exécution directe : `tsx scripts/seed-plans.ts` ou équivalent selon ton setup
 if (require.main === module) {

@@ -48,8 +48,7 @@ export const emailTrackingService = {
         occurredAt: now,
       })
 
-      console.log("[Email Tracking] Open event recorded for:", params.recipient)
-
+ 
       // Update email_history with denormalized stats (if emailHistoryId exists)
       if (params.emailHistoryId) {
         // Get current email history record

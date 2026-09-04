@@ -45,7 +45,7 @@ initMinIO()
 const app = new Elysia()
   .use(
     cors({
-      origin: ["http://localhost:3000"],
+      origin: ["https://so-mails.com"],
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
@@ -109,20 +109,6 @@ const app = new Elysia()
       //@ts-expect-error type mismatch
       leaveUser(ws)
     },
-  });
-
-const app = new Elysia()
-  .use(
-    cors({
-      origin: ["https://so-mails.com"],
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
-    }),
-  )
-  .onBeforeHandle(({ set }) => {
-    // Ensure UTF-8 encoding for all responses
-    set.headers['Content-Type'] = 'application/json; charset=utf-8';
   })
   .listen({
     hostname: "0.0.0.0",

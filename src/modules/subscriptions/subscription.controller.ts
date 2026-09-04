@@ -110,8 +110,7 @@ export const subscriptionController = new Elysia({ prefix: "/subscriptions" })
   .post("/ensure-default", async ({ tenant }) => {
     try {
       // Vérifier si subscription existe déjà
-      console.log(tenant)
-      const existing = await subscriptionService.getByOrganization(tenant.organizationId)
+       const existing = await subscriptionService.getByOrganization(tenant.organizationId)
 
       if (existing) {
         return {
@@ -138,8 +137,7 @@ export const subscriptionController = new Elysia({ prefix: "/subscriptions" })
         })
         .returning()
 
-      console.log("[Subscription] Created default subscription for organization:", tenant.organizationId)
-
+ 
       return {
         message: "Default subscription created",
         subscription: newSubscription,

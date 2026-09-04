@@ -137,8 +137,7 @@ export const templateService = {
     // Update stats for each template
     await Promise.all(templates.map((t) => this.updateTemplateStats(t.id)))
 
-    console.log(`[Template] Recalculated stats for ${templates.length} templates in org: ${organizationId}`)
-  },
+   },
 
   /**
    * Get detailed statistics for a template

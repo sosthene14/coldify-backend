@@ -52,8 +52,7 @@ export async function sendPushNotification(
       .limit(1)
 
     if (!userData?.pushSubscription) {
-      console.log(`[Push] No subscription found for user: ${userId}`)
-      return { success: false, error: "No subscription found" }
+       return { success: false, error: "No subscription found" }
     }
 
     let subscription: PushSubscription
@@ -75,16 +74,14 @@ export async function sendPushNotification(
     // Send notification
     await webPush.sendNotification(subscription, JSON.stringify(payload))
 
-    console.log(`[Push] Notification sent to user: ${userId}`)
-    return { success: true }
+     return { success: true }
   } catch (error: unknown) {
     const webPushError = error as WebPushError
     console.error("[Push] Error sending notification:", webPushError)
 
     // If subscription is expired or invalid, remove it from database
     if (webPushError.statusCode === 410 || webPushError.statusCode === 404) {
-      console.log(`[Push] Removing invalid subscription for user: ${userId}`)
-      await db.update(user).set({ pushSubscription: null }).where(eq(user.id, userId))
+       await db.update(user).set({ pushSubscription: null }).where(eq(user.id, userId))
       return { success: false, error: "Subscription expired or invalid" }
     }
 
@@ -130,10 +127,7 @@ export async function sendPushToOrganization(
 
     const successfulSends = results.filter((r) => r.status === "fulfilled" && r.value.success).length
     const failedSends = results.length - successfulSends
-
-    console.log(
-      `[Push] Sent ${successfulSends}/${usersWithSubscription.length} notifications to organization: ${organizationId}`,
-    )
+ 
 
     return {
       totalUsers: usersWithSubscription.length,

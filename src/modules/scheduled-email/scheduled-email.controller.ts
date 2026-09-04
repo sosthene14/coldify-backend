@@ -171,8 +171,7 @@ export const scheduledEmailController = new Elysia({ prefix: "/scheduled-emails"
           if (attachment.objectKey) {
             try {
               await attachmentUploadService.deleteAttachment(attachment.objectKey)
-              console.log(`[Scheduled Email] Deleted attachment on cancellation: ${attachment.objectKey}`)
-            } catch (error) {
+             } catch (error) {
               console.error(`[Scheduled Email] Failed to delete attachment ${attachment.objectKey}:`, error)
               // Continue with deletion even if attachment cleanup fails
             }

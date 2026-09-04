@@ -90,9 +90,7 @@ export const attachmentUploadService = {
         }
       }
 
-      console.log(
-        `[Attachment Cleanup] Protecting ${protectedObjectKeys.size} attachments from ${pendingEmails.length} pending scheduled emails`,
-      )
+     
 
       const stream = minioClient.listObjects(bucket, ATTACHMENTS_PREFIX, true)
 
@@ -101,8 +99,7 @@ export const attachmentUploadService = {
 
         // Skip if this attachment is protected (used by a pending scheduled email)
         if (protectedObjectKeys.has(obj.name)) {
-          console.log(`[Attachment Cleanup] Skipping protected attachment: ${obj.name}`)
-          continue
+           continue
         }
 
         try {
@@ -114,8 +111,7 @@ export const attachmentUploadService = {
             // Attachment has expired and is not protected, delete it
             await minioClient.removeObject(bucket, obj.name)
             deleted++
-            console.log(`Deleted expired attachment: ${obj.name}`)
-          }
+           }
         } catch (error) {
           console.error(`Error processing attachment ${obj.name}:`, error)
           errors++

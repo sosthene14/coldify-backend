@@ -6,13 +6,11 @@ import { redisConnection } from "../lib/redis"
 const attachmentCleanupWorker = new Worker(
   "attachment-cleanup",
   async (_job) => {
-    console.log("Running attachment cleanup job...")
-
+ 
     try {
       const result = await attachmentUploadService.cleanupExpiredAttachments()
 
-      console.log(`Attachment cleanup completed: ${result.deleted} deleted, ${result.errors} errors`)
-
+ 
       return result
     } catch (error) {
       console.error("Attachment cleanup worker error:", error)

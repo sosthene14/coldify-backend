@@ -25,8 +25,7 @@ async function scheduleAttachmentCleanup() {
     },
   )
 
-  console.log("⏰ Attachment cleanup scheduled to run every hour")
-}
+ }
 
 // Initialize scheduler
 scheduleAttachmentCleanup().catch((error) => {
