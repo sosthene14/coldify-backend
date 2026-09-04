@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS "email_history_mailboxId_idx" ON "email_history" ("ma
 CREATE INDEX IF NOT EXISTS "email_history_sentAt_idx" ON "email_history" ("sent_at");
 
 -- Set database encoding to UTF-8 if not already set
-ALTER DATABASE coldy SET client_encoding = 'UTF8';
+ALTER DATABASE somails SET client_encoding = 'UTF8';
 
 -- Comments
 COMMENT ON TABLE "email_history" IS 'Stores history of sent emails (without actual attachment files)';

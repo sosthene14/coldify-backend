@@ -1,10 +1,6 @@
 // Script to run migration manually
 
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
-import postgres from "postgres"
-
-const DATABASE_URL = process.env.DATABASE_URL || "postgresql://coldy:coldy_dev_password@localhost:5432/coldy"
+const DATABASE_URL = process.env.DATABASE_URL || "postgresql://somails:somails_dev_password@localhost:5432/somails";
 
 async function runMigration() {
   const client = postgres(DATABASE_URL)

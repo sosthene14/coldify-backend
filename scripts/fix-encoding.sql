@@ -6,10 +6,10 @@ SHOW server_encoding;
 SHOW client_encoding;
 
 -- Set database encoding to UTF-8
-ALTER DATABASE coldy SET client_encoding = 'UTF8';
+ALTER DATABASE somails SET client_encoding = 'UTF8';
 
 -- Reconnect and verify
-\c coldy
+\c somails
 
 -- Show encoding again
 SHOW client_encoding;
