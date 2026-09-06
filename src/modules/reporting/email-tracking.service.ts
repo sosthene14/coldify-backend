@@ -97,7 +97,7 @@ export const emailTrackingService = {
           // Send push notification to user (works even if app is closed)
           if (trackingData.userId) {
             sendPushNotification(trackingData.userId, {
-              title: "📧So-mails: Email ouvert",
+              title: "So-mails: Email ouvert",
               body: `${params.recipient} a ouvert votre email "${emailHistoryRecord.subject}" (${totalOpens}x)`,
               icon: "https://so-mails.com/logo.png",
               data: {
