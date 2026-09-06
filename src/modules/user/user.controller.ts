@@ -221,7 +221,7 @@ export const userController = new Elysia({ prefix: "/user" })
       // Parse preferences or return default
       const preferences = userProfile.notificationPreferences
         ? JSON.parse(userProfile.notificationPreferences)
-        : { emailOpened: false }
+        : { emailOpened: true }
 
       return {
         preferences,

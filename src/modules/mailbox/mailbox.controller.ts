@@ -383,7 +383,8 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
    * Test mailbox connection
    */
   .post("/:id/test", async ({ params, tenant }) => {
-    const mailbox = await mailboxService.getById(params.id, tenant.organizationId)
+    // Use the internal record here because Gmail verification needs the stored tokens.
+    const mailbox = await mailboxService.getByIdInternal(params.id, tenant.organizationId)
 
     if (!mailbox) {
       return {
@@ -396,9 +397,7 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
       const gmailService = getGmailService()
 
       const result = await gmailService.verifyConnection(
-        //@ts-expect-error type mismatch
         mailbox.accessToken || "",
-        //@ts-expect-error type mismatch
         mailbox.refreshToken || null,
       )
 
@@ -409,6 +408,33 @@ export const mailboxController = new Elysia({ prefix: "/mailboxes" })
         await mailboxService.updateStatus(mailbox.id, "error", "Connection test failed")
         return {
           error: "Connection test failed",
+          status: 400,
+        }
+      }
+    }
+
+    if (mailbox.provider === "smtp") {
+      if (!mailbox.smtpHost || !mailbox.smtpPort || !mailbox.smtpUsername || !mailbox.smtpPassword) {
+        await mailboxService.updateStatus(mailbox.id, "error", "SMTP configuration is incomplete")
+        return {
+          error: "SMTP configuration is incomplete",
+          status: 400,
+        }
+      }
+
+      try {
+        const transporter = emailSendService.createSmtpTransporter(mailbox)
+        await transporter.verify()
+        transporter.close()
+        await mailboxService.updateStatus(mailbox.id, "connected")
+
+        return { success: true, message: "SMTP connection is valid" }
+      } catch (error: any) {
+        const message = error?.message || "SMTP connection test failed"
+        await mailboxService.updateStatus(mailbox.id, "error", message)
+
+        return {
+          error: message,
           status: 400,
         }
       }

@@ -106,8 +106,7 @@ const worker = new Worker<ScheduledEmailJobData>(
 )
 
 worker.on("completed", (job) => {
-  console.log(`[Scheduled Email Worker] Job ${job.id} completed`)
-})
+ })
 
 worker.on("failed", (job, err) => {
   console.error(`[Scheduled Email Worker] Job ${job?.id} failed:`, err)

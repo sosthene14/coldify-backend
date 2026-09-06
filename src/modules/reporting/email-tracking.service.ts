@@ -30,23 +30,23 @@ export const emailTrackingService = {
       const now = new Date()
 
       // Insert into email_event (detailed tracking)
-      await db.insert(emailEvent).values({
-        id: nanoid(),
-        organizationId: params.organizationId,
-        mailId: params.campaignId || null,
-        leadId: params.leadId || null,
-        templateId: null,
-        memberId: null,
-        type: "opened",
-        metadata: {
-          recipient: params.recipient,
-          emailHistoryId: params.emailHistoryId,
-          userAgent: params.userAgent,
-          ipAddress: params.ipAddress,
-          openedAt: now.toISOString(),
-        },
-        occurredAt: now,
-      })
+     await db.insert(emailEvent).values({
+  id: nanoid(),
+  organizationId: params.organizationId,
+  templateId: null,
+  memberId: null,
+  type: "opened",
+  metadata: {
+    mailId: params.campaignId || null,
+    leadId: params.leadId || null,
+    recipient: params.recipient,
+    emailHistoryId: params.emailHistoryId,
+    userAgent: params.userAgent,
+    ipAddress: params.ipAddress,
+    openedAt: now.toISOString(),
+  },
+  occurredAt: now,
+})
 
  
       // Update email_history with denormalized stats (if emailHistoryId exists)

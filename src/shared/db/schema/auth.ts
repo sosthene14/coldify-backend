@@ -1,10 +1,6 @@
 import { relations } from "drizzle-orm"
 import { boolean, index, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
-import { calendarEvent } from "../../../modules/calendar-event/calendar-event.schema"
-import { campaign } from "../../../modules/campaign/campaign.schema"
-import { conversation } from "../../../modules/conversation/conversation.schema"
-import { folder } from "../../../modules/folder/folder.schema"
-import { lead } from "../../../modules/lead/lead.schema"
+ 
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -15,7 +11,7 @@ export const user = pgTable("user", {
   phoneNumber: text("phone_number"),
   timezone: text("timezone"),
   language: text("language").default("English"),
-  notificationPreferences: text("notification_preferences"), // JSON string pour les préférences
+  notificationPreferences: text("notification_preferences").default('{"emailOpened":true}'), // JSON string pour les préférences
   pushSubscription: text("push_subscription"), // JSON string pour la push subscription
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
   email: text("email").notNull().unique(),
@@ -142,7 +138,6 @@ export const invitation = pgTable(
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
-  createdFolders: many(folder),
   members: many(member),
   invitations: many(invitation),
 }))
@@ -163,12 +158,7 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const organizationRelations = relations(organization, ({ many }) => ({
   members: many(member),
-  invitations: many(invitation),
-  conversations: many(conversation),
-  calendarEvents: many(calendarEvent),
-  leads: many(lead),
-  campaigns: many(campaign),
-  folders: many(folder),
+  invitations: many(invitation)
 }))
 
 export const memberRelations = relations(member, ({ one, many }) => ({
@@ -176,10 +166,6 @@ export const memberRelations = relations(member, ({ one, many }) => ({
     fields: [member.organizationId],
     references: [organization.id],
   }),
-  createdCampaigns: many(campaign),
-  conversations: many(conversation),
-  calendarEvents: many(calendarEvent),
-  ownedLeads: many(lead),
   user: one(user, {
     fields: [member.userId],
     references: [user.id],

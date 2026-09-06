@@ -1,7 +1,6 @@
 import { eq, sql } from "drizzle-orm"
 import { db } from "../../shared"
 import type { TenantContext } from "../../shared/plugins/tenant"
-import { lead } from "../lead/lead.schema"
 import { emailEvent, type emailEventType } from "./reporting.schema"
 
 type EventType = (typeof emailEventType.enumValues)[number]
@@ -105,13 +104,7 @@ export const reportingService = {
   },
 
   /** Tab "Leads Funnel" — direct sur lead.status, pas de cagg nécessaire */
-  async getLeadsFunnel(tenant: TenantContext) {
-    return db
-      .select({ status: lead.status, count: sql<number>`count(*)` })
-      .from(lead)
-      .where(eq(lead.organizationId, tenant.organizationId))
-      .groupBy(lead.status)
-  },
+ 
 }
 
 async function sumFromCagg(organizationId: string, from: string, to: string) {

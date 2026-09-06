@@ -24,4 +24,4 @@ export const reportingController = new Elysia({ prefix: "/reports" })
     query: dateRangeQuery,
   })
 
-  .get("/leads-funnel", async ({ tenant }) => reportingService.getLeadsFunnel(tenant))
+ 

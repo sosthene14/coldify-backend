@@ -18,7 +18,6 @@ type WebSocketMessage =
       [key: string]: unknown
     }
 
- import { conversationController } from "./modules/conversation"
 import { emailHistoryController } from "./modules/email-history"
 // Import des contrôleurs des modules
  
@@ -45,7 +44,7 @@ initMinIO()
 const app = new Elysia()
   .use(
     cors({
-      origin: ["https://so-mails.com"],
+      origin: ["http://localhost:3000"],
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
@@ -60,7 +59,6 @@ const app = new Elysia()
     app
       .mount(auth.handler)
       .use(templateController)
-      .use(conversationController)
       .use(reportingController)
       .use(uploadController)
       .use(mailboxController)
