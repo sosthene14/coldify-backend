@@ -71,8 +71,7 @@ const app = new Elysia()
   .use(emailTrackingController) // Public tracking endpoint (keep outside /api for backwards compatibility)
   .ws("/ws", {
     open(ws) {
-      console.log("[WebSocket] ✅ User connected")
-      ws.send(JSON.stringify({ type: "connected" }))
+       ws.send(JSON.stringify({ type: "connected" }))
     },
     //@ts-nocheck type mismatch
     message(ws, message) {
@@ -90,7 +89,6 @@ const app = new Elysia()
         if (data.type === "join:user" && data.userId) {
           //@ts-expect-error type mismatch
           joinUser(ws, data.userId)
-          console.log(`[WebSocket] 🔗 User joined: ${data.userId}`)
           ws.send(
             JSON.stringify({
               type: "joined",
@@ -103,7 +101,6 @@ const app = new Elysia()
       }
     },
     close(ws) {
-      console.log("[WebSocket] ❌ User disconnected")
       //@ts-expect-error type mismatch
       leaveUser(ws)
     },

@@ -56,6 +56,7 @@ function extractSnippet(html: string, maxLength = 150): string {
 // Gmail limits
 const GMAIL_MAX_MESSAGE_SIZE = 25 * 1024 * 1024 // 25MB
 const GMAIL_MAX_ATTACHMENT_SIZE = 25 * 1024 * 1024 // 25MB per attachment
+const MAX_EMAIL_CONTENT_SIZE = 5 * 1024 * 1024 // 5 MiB for HTML + plain text
 
 // Dangerous file extensions that should be blocked
 export const DANGEROUS_EXTENSIONS = [
@@ -198,6 +199,19 @@ export const emailSendService = {
     return htmlSize + textSize + encodedAttachmentsSize
   },
 
+  validateContentSize(html: string, text = ""): AttachmentValidationResult {
+    const contentSize = Buffer.byteLength(html, "utf8") + Buffer.byteLength(text, "utf8")
+
+    if (contentSize > MAX_EMAIL_CONTENT_SIZE) {
+      return {
+        valid: false,
+        error: `Email content exceeds the 5MB limit (current size: ${(contentSize / 1024 / 1024).toFixed(2)}MB)`,
+      }
+    }
+
+    return { valid: true }
+  },
+
   /**
    * Load attachment content from MinIO
    */
@@ -232,6 +246,11 @@ export const emailSendService = {
     error?: string
   }> {
     try {
+      const contentValidation = this.validateContentSize(params.html, params.text)
+      if (!contentValidation.valid) {
+        return { success: false, error: contentValidation.error }
+      }
+
       // Get mailbox (with tokens for sending)
       const mailbox = await mailboxService.getByIdInternal(params.mailboxId, params.organizationId)
 
@@ -480,6 +499,11 @@ export const emailSendService = {
    */
   async scheduleEmail(params: SendEmailParams): Promise<{ success: boolean; scheduledId?: string; error?: string }> {
     try {
+      const contentValidation = this.validateContentSize(params.html, params.text)
+      if (!contentValidation.valid) {
+        return { success: false, error: contentValidation.error }
+      }
+
       if (!params.scheduledAt) {
         return { success: false, error: "scheduledAt is required" }
       }

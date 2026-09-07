@@ -8,9 +8,17 @@ import { renderEmailTemplate } from "./email/template"
 import { ac, admin, member as memberRole, superadmin, viewer } from "./permissions"
 import { redisConnection } from "./redis"
 
+const frontendUrl =
+  process.env.FRONTEND_URL ||
+  process.env.BETTER_AUTH_URL?.replace(/:\d+$/, ":3000") ||
+  "http://localhost:3000"
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
   trustedOrigins: ["http://localhost:3000"],
+  onAPIError: {
+    errorURL: `${frontendUrl}/auth/error`,
+  },
 
   user: {
     additionalFields: {
