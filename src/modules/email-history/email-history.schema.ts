@@ -26,6 +26,7 @@ export const emailHistory = pgTable(
     bcc: json("bcc").$type<string[]>(),
     subject: text("subject").notNull(),
     snippet: text("snippet").notNull(),
+    encryptedContent: text("encrypted_content"),
 
     // Attachments info (just metadata, not actual files)
     hasAttachments: boolean("has_attachments").default(false).notNull(),

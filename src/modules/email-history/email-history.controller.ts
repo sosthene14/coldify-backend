@@ -91,7 +91,7 @@ export const emailHistoryController = new Elysia({ prefix: "/email-history" })
     }
 
     try {
-      const htmlContent = await emailHistoryService.fetchContentOnDemand(email, tenant.organizationId)
+      const htmlContent = emailHistoryService.getDecryptedContent(email)
 
       return { htmlContent }
     } catch (_err) {

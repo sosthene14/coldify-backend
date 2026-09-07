@@ -1,6 +1,6 @@
 import type { Readable } from "node:stream"
 import nodemailer from "nodemailer"
-import { decrypt } from "../../shared/lib/crypto"
+import { decrypt, encryptEmailContent } from "../../shared/lib/crypto"
 import { generateTrackingToken, injectTrackingPixel, type TrackingData } from "../../shared/lib/email-tracking"
 import { BUCKET_NAME, minioClient } from "../../shared/lib/minio"
 import { emailHistoryService } from "../email-history/email-history.service"
@@ -332,6 +332,7 @@ export const emailSendService = {
             bcc: params.bcc,
             subject: params.subject,
             snippet: extractSnippet(params.html),
+            encryptedContent: encryptEmailContent(params.html),
             hasAttachments: !!params.attachments && params.attachments.length > 0,
             attachmentCount: params.attachments?.length || 0,
             attachmentNames: params.attachments?.map((a) => a.filename),
@@ -440,6 +441,7 @@ export const emailSendService = {
             bcc: params.bcc,
             subject: params.subject,
             snippet: extractSnippet(params.html),
+            encryptedContent: encryptEmailContent(params.html),
             hasAttachments: !!params.attachments && params.attachments.length > 0,
             attachmentCount: params.attachments?.length || 0,
             attachmentNames: params.attachments?.map((a) => a.filename),

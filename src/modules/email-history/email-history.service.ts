@@ -1,39 +1,9 @@
 import { and, count, desc, eq, type SQL } from "drizzle-orm"
-import { google } from "googleapis"
 import { nanoid } from "nanoid"
 import { db } from "../../shared/db"
-import { mailbox } from "../mailbox"
+import { decryptEmailContent } from "../../shared/lib/crypto"
 import type { EmailHistory, InsertEmailHistory } from "./email-history.schema"
 import { emailHistory } from "./email-history.schema"
-
-// Types pour les payloads Gmail
-interface GmailMessagePart {
-  partId?: string
-  mimeType?: string
-  filename?: string
-  headers?: Array<{ name: string; value: string }>
-  body?: {
-    attachmentId?: string
-    size?: number
-    data?: string
-  }
-  parts?: GmailMessagePart[]
-}
-
-interface GmailMessagePayload {
-  partId?: string
-  mimeType?: string
-  filename?: string
-  headers?: Array<{ name: string; value: string }>
-  body?: {
-    attachmentId?: string
-    size?: number
-    data?: string
-  }
-  parts?: GmailMessagePart[]
-}
-
-type MailboxRecord = typeof mailbox.$inferSelect
 
 interface EmailHistoryStats {
   totalSent: number
@@ -51,10 +21,6 @@ interface EmailHistoryListResult {
     page: number
     totalPages: number
   }
-}
-
-function stripTrackingPixel(html: string): string {
-  return html.replace(/<img[^>]*src=["'][^"']*\/api\/success\/[^"']*["'][^>]*>/gi, "")
 }
 
 export const emailHistoryService = {
@@ -206,90 +172,11 @@ export const emailHistoryService = {
     return result.length > 0
   },
 
-  async fetchContentOnDemand(email: EmailHistory, _organizationId: string): Promise<string> {
-    const mailboxRecord = await db.query.mailbox.findFirst({
-      where: eq(mailbox.id, email.mailboxId),
-    })
-
-    if (!mailboxRecord) {
-      throw new Error("Mailbox not found")
+  getDecryptedContent(email: EmailHistory): string {
+    if (!email.encryptedContent) {
+      throw new Error("Email content is not available for this message")
     }
 
-    if (mailboxRecord.provider !== "gmail") {
-      throw new Error("Provider not supported for on-demand fetch")
-    }
-
-    const accessToken = await this.getValidAccessToken(mailboxRecord)
-
-    const oauth2Client = new google.auth.OAuth2()
-    oauth2Client.setCredentials({ access_token: accessToken })
-    const gmail = google.gmail({ version: "v1", auth: oauth2Client })
-
-    const message = await gmail.users.messages.get({
-      userId: "me",
-      id: email.gmailMessageId || "",
-      format: "full",
-    })
-
-    const payload = message.data.payload as GmailMessagePayload | null | undefined
-    const htmlContent = this.extractHtmlBody(payload)
-    return stripTrackingPixel(htmlContent)
-  },
-
-  async getValidAccessToken(mailboxRecord: MailboxRecord): Promise<string> {
-    const isExpired =
-      !mailboxRecord.tokenExpiresAt || new Date(mailboxRecord.tokenExpiresAt).getTime() < Date.now() + 60_000
-
-    if (!isExpired) {
-      return mailboxRecord.accessToken || ""
-    }
-
-    const oauth2Client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET)
-    oauth2Client.setCredentials({ refresh_token: mailboxRecord.refreshToken })
-
-    const { credentials } = await oauth2Client.refreshAccessToken()
-
-    await db
-      .update(mailbox)
-      .set({
-        accessToken: credentials.access_token,
-        tokenExpiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : null,
-      })
-      .where(eq(mailbox.id, mailboxRecord.id))
-
-    return credentials.access_token || ""
-  },
-
-  extractHtmlBody(payload: GmailMessagePayload | null | undefined): string {
-    if (!payload) return ""
-
-    if (payload.mimeType === "text/html" && payload.body?.data) {
-      return Buffer.from(payload.body.data, "base64url").toString("utf-8")
-    }
-
-    if (payload.parts) {
-      const htmlPart = this.findPart(payload.parts, "text/html")
-      if (htmlPart?.body?.data) {
-        return Buffer.from(htmlPart.body.data, "base64url").toString("utf-8")
-      }
-      const textPart = this.findPart(payload.parts, "text/plain")
-      if (textPart?.body?.data) {
-        const text = Buffer.from(textPart.body.data, "base64url").toString("utf-8")
-        return `<pre>${text}</pre>`
-      }
-    }
-
-    return ""
-  },
-
-  findPart(parts: GmailMessagePart[], mimeType: string): GmailMessagePart | null {
-    for (const part of parts) {
-      if (part.mimeType === mimeType) return part
-      if (part.parts) {
-        const found = this.findPart(part.parts, mimeType)
-        if (found) return found
-      }
-    }
-    return null
+    return decryptEmailContent(email.encryptedContent)
   },
 }
